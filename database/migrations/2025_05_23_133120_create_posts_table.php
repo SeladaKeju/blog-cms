@@ -15,10 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('excerpt')->nullable();
-            $table->longtext('content');
+            $table->longText('content');
             $table->string('thumbnail');
-            $table->string('generate_image');
-            $table->boolean('is_published');
+            $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->datetime('published_at')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
