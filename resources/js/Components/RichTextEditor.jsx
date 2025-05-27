@@ -2,7 +2,9 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import TextAlign from '@tiptap/extension-text-align';
-import { Button, Upload, message, Dropdown } from 'antd';
+import TextStyle from '@tiptap/extension-text-style';
+import FontSize from 'tiptap-extension-font-size';
+import { Button, Upload, message, Dropdown, Tooltip } from 'antd';
 import { 
     BoldOutlined, 
     ItalicOutlined, 
@@ -12,14 +14,14 @@ import {
     AlignLeftOutlined,
     AlignCenterOutlined,
     AlignRightOutlined,
-    MenuOutlined
+    MenuOutlined,
+    FontSizeOutlined
 } from '@ant-design/icons';
 
 export default function RichTextEditor({ content, onChange }) {
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
-                // Enable all list-related extensions
                 bulletList: {
                     keepMarks: true,
                     keepAttributes: false,
@@ -44,12 +46,16 @@ export default function RichTextEditor({ content, onChange }) {
             }),
             Image,
             TextAlign.configure({
-                 types: ['heading', 'paragraph', 'bulletList', 'orderedList']
+                types: ['heading', 'paragraph', 'bulletList', 'orderedList']
+            }),
+            TextStyle,
+            FontSize.configure({
+                types: ['textStyle'],
             })
         ],
         editorProps: {
             attributes: {
-                class: 'prose prose-sm sm:prose lg:prose-lg max-w-none focus:outline-none',
+                class: 'prose prose-lg max-w-none focus:outline-none min-h-[500px] p-6',
             },
         },
         content: content,
@@ -87,6 +93,23 @@ export default function RichTextEditor({ content, onChange }) {
         }
     };
 
+    const formatItems = [
+        {
+            key: 'bold',
+            icon: <BoldOutlined />,
+            onClick: () => editor?.chain().focus().toggleBold().run(),
+            isActive: () => editor?.isActive('bold') || false,
+            tooltip: 'Bold'
+        },
+        {
+            key: 'italic',
+            icon: <ItalicOutlined />,
+            onClick: () => editor?.chain().focus().toggleItalic().run(),
+            isActive: () => editor?.isActive('italic') || false,
+            tooltip: 'Italic'
+        }
+    ];
+
     const alignmentItems = {
         items: [
             {
@@ -110,6 +133,39 @@ export default function RichTextEditor({ content, onChange }) {
         ]
     };
 
+    const fontSizeItems = {
+        items: [
+            {
+                key: '14px',
+                label: '14px',
+                onClick: () => editor.chain().focus().setFontSize('14px').run()
+            },
+            {
+                key: '16px',
+                label: '16px (Normal)',
+                onClick: () => editor.chain().focus().setFontSize('16px').run()
+            },
+            {
+                key: '18px',
+                label: '18px',
+                onClick: () => editor.chain().focus().setFontSize('18px').run()
+            },
+            {
+                key: '24px',
+                label: '24px',
+                onClick: () => editor.chain().focus().setFontSize('24px').run()
+            },
+            {
+                type: 'divider'
+            },
+            {
+                key: 'unset',
+                label: 'Reset Size',
+                onClick: () => editor.chain().focus().unsetFontSize().run()
+            }
+        ]
+    };
+
     const listItems = {
         items: [
             {
@@ -123,66 +179,64 @@ export default function RichTextEditor({ content, onChange }) {
                 label: 'Numbered List',
                 icon: <OrderedListOutlined />,
                 onClick: () => editor.chain().focus().toggleOrderedList().run()
-            },
-            {
-                type: 'divider'
-            },
+            }
         ]
     };
 
     if (!editor) return null;
 
     return (
-        <div className="border rounded-lg overflow-hidden">
-            <div className="border-b bg-gray-50 p-2">
-                <div className="flex items-center">
-                    <Button
-                        type={editor.isActive('bold') ? 'primary' : 'default'}
-                        icon={<BoldOutlined />}
-                        onClick={() => editor.chain().focus().toggleBold().run()}
-                    />
-                    <Button
-                        type={editor.isActive('italic') ? 'primary' : 'default'}
-                        icon={<ItalicOutlined />}
-                        onClick={() => editor.chain().focus().toggleItalic().run()}
-                    />
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+            {/* Toolbar - Moved to Top */}
+            <div className="flex items-center justify-between bg-gray-50 border-b border-gray-200 p-3">
+                <div className="flex items-center space-x-2">
+                    {formatItems.map((item) => (
+                        <Tooltip key={item.key} title={item.tooltip}>
+                            <Button 
+                                type={item.isActive() ? 'primary' : 'text'}
+                                icon={item.icon}
+                                onClick={item.onClick}
+                                size="small"
+                                className="border-0"
+                            />
+                        </Tooltip>
+                    ))}
                     
-                    <Dropdown
-                        menu={listItems}
-                        placement="bottomLeft"
-                        trigger={['click']}
-                    >
+                    <div className="w-px h-6 bg-gray-300 mx-2" />
+                    
+                    <Dropdown menu={fontSizeItems} trigger={['click']} placement="bottomLeft">
+                        <Button type="text" icon={<FontSizeOutlined />} size="small" />
+                    </Dropdown>
+                    
+                    <Dropdown menu={listItems} trigger={['click']} placement="bottomLeft">
                         <Button 
-                            icon={<UnorderedListOutlined />}
-                            type={editor.isActive('bulletList') || editor.isActive('orderedList') ? 'primary' : 'default'}
-                        >
-                            List
-                        </Button>
+                            type={editor.isActive('bulletList') || editor.isActive('orderedList') ? 'primary' : 'text'}
+                            icon={<UnorderedListOutlined />} 
+                            size="small"
+                        />
                     </Dropdown>
-
-                    <Dropdown
-                        menu={alignmentItems}
-                        placement="bottomLeft"
-                        trigger={['click']}
-                    >
-                        <Button icon={<MenuOutlined />}>
-                            Alignment
-                        </Button>
+                    
+                    <Dropdown menu={alignmentItems} trigger={['click']} placement="bottomLeft">
+                        <Button type="text" icon={<AlignLeftOutlined />} size="small" />
                     </Dropdown>
-
+                    
                     <Upload
                         customRequest={({ file }) => handleImageUpload(file)}
                         showUploadList={false}
                     >
-                        <Button icon={<PictureOutlined />}>
-                            Image
-                        </Button>
+                        <Button type="text" icon={<PictureOutlined />} size="small" />
                     </Upload>
                 </div>
+                
+                <div className="text-xs text-gray-400">
+                    Auto-saved
+                </div>
             </div>
+
+            {/* Editor Content */}
             <EditorContent 
                 editor={editor} 
-                className="prose max-w-none p-4 min-h-[200px]" 
+                className="min-h-[500px] focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-opacity-20 transition-all"
             />
         </div>
     );

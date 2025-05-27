@@ -14,13 +14,18 @@ return new class extends Migration
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
             $table->string('title');
+            $table->string('slug')->unique(); // Added slug field
             $table->text('excerpt')->nullable();
             $table->longText('content');
-            $table->string('thumbnail');
+            $table->string('thumbnail')->nullable(); // Made nullable
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->datetime('published_at')->nullable();
-            $table->timestamp('created_at')->nullable();
-            $table->timestamp('updated_at')->nullable();
+            $table->timestamps(); // Use Laravel's timestamps helper
+            
+            // Add indexes for better performance
+            $table->index('status');
+            $table->index('published_at');
+            $table->index('slug');
         });
     }
 

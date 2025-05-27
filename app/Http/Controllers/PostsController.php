@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class PostsController extends Controller
@@ -19,17 +20,21 @@ class PostsController extends Controller
                 return [
                     'id' => $post->id,
                     'title' => $post->title,
+                    'slug' => $post->slug,
                     'excerpt' => $post->excerpt,
                     'content' => $post->content,
-                    'thumbnail' => $post->thumbnail,
+                    'thumbnail' => $post->thumbnail ? asset('storage/' . $post->thumbnail) : null,
                     'status' => $post->status,
-                    'published_date' => $post->published_date,
+                    'published_date' => $post->published_at ? $post->published_at->format('F j, Y') : 'Draft',
+                    'published_at' => $post->published_at?->format('Y-m-d H:i:s'),
                     'is_published' => $post->isPublished(),
+                    'created_at' => $post->created_at->format('F j, Y'),
+                    'updated_at' => $post->updated_at->format('F j, Y'),
                 ];
             });
         
         return Inertia::render('article-management/article-manager', [
-            'posts' => $posts
+            'posts' => $posts->toArray()
         ]);
     }
 
@@ -59,6 +64,9 @@ class PostsController extends Controller
             'published_at' => 'nullable|date'
         ]);
 
+        // Generate unique slug from title
+        $validated['slug'] = $this->generateUniqueSlug($validated['title']);
+
         if ($request->hasFile('thumbnail')) {
             $path = $request->file('thumbnail')->store('thumbnails', 'public');
             $validated['thumbnail'] = $path;
@@ -69,9 +77,36 @@ class PostsController extends Controller
             $validated['published_at'] = now();
         }
 
-        Post::create($validated);
+        $post = Post::create($validated);
 
         return redirect()->route('article')->with('success', 'Post created successfully.');
+    }
+
+    /**
+     * Show the form for editing the specified post.
+     */
+    public function edit($id)
+    {
+        try {
+            $post = Post::findOrFail($id);
+            
+            return Inertia::render('article-management/PostEdit', [
+                'post' => [
+                    'id' => $post->id,
+                    'title' => $post->title,
+                    'slug' => $post->slug,
+                    'excerpt' => $post->excerpt,
+                    'content' => $post->content,
+                    'thumbnail' => $post->thumbnail ? asset('storage/' . $post->thumbnail) : null,
+                    'status' => $post->status,
+                    'published_at' => $post->published_at?->format('Y-m-d\TH:i'),
+                    'created_at' => $post->created_at->format('F j, Y'),
+                    'updated_at' => $post->updated_at->format('F j, Y'),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->route('article')->with('error', 'Post not found');
+        }
     }
 
     /**
@@ -92,6 +127,11 @@ class PostsController extends Controller
             'published_at' => 'nullable|date'
         ]);
 
+        // Update slug if title has changed
+        if ($validated['title'] !== $post->title) {
+            $validated['slug'] = $this->generateUniqueSlug($validated['title'], $post->id);
+        }
+
         if ($request->hasFile('thumbnail')) {
             // Delete old thumbnail if exists
             if ($post->thumbnail) {
@@ -103,13 +143,14 @@ class PostsController extends Controller
 
         // Set published_at when status changes to published
         if ($validated['status'] === Post::STATUS_PUBLISHED && 
-            $post->status !== Post::STATUS_PUBLISHED) {
+            $post->status !== Post::STATUS_PUBLISHED && 
+            !$validated['published_at']) {
             $validated['published_at'] = now();
         }
 
         $post->update($validated);
 
-        return redirect()->back()->with('success', 'Post updated successfully.');
+        return redirect()->route('article')->with('success', 'Post updated successfully.');
     }
 
     /**
@@ -124,10 +165,32 @@ class PostsController extends Controller
 
         $post->delete();
 
-        return redirect()->back()->with('success', 'Post deleted successfully.');
+        return redirect()->route('article')->with('success', 'Post deleted successfully.');
     }
 
     /**
-     * Show the form for editing the specified post.
+     * Generate a unique slug
      */
+    private function generateUniqueSlug($title, $excludeId = null)
+    {
+        $slug = Str::slug($title);
+        $originalSlug = $slug;
+        $count = 1;
+
+        $query = Post::where('slug', $slug);
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        while ($query->exists()) {
+            $slug = $originalSlug . '-' . $count;
+            $count++;
+            $query = Post::where('slug', $slug);
+            if ($excludeId) {
+                $query->where('id', '!=', $excludeId);
+            }
+        }
+
+        return $slug;
+    }
 }

@@ -34,7 +34,7 @@ export default function AuthenticatedLayout({ children }) {
                 collapsed={collapsed}
                 theme="light"
                 width={280}
-                collapsedWidth={80}
+                collapsedWidth={0} // Changed from 80 to 0
                 style={{
                     overflow: 'auto',
                     height: '100vh',
@@ -42,11 +42,12 @@ export default function AuthenticatedLayout({ children }) {
                     left: 0,
                     top: 0,
                     bottom: 0,
-                    boxShadow: '2px 0 8px 0 rgba(29,35,41,.05)',
+                    boxShadow: collapsed ? 'none' : '2px 0 8px 0 rgba(29,35,41,.05)',
+                    transition: 'all 0.2s',
                 }}
             >
                 <div className="p-6 mb-4">
-                    <h2 className={`text-gray-800 font-bold ${collapsed ? 'text-sm' : 'text-3xl'}`}>
+                    <h2 className="text-gray-800 font-bold text-3xl">
                         YOURLOGO
                     </h2>
                 </div>
@@ -75,33 +76,25 @@ export default function AuthenticatedLayout({ children }) {
                                 className="hover:text-blue-500 transition-colors"
                                 style={{ fontSize: '16px' }}
                             >
-                                New Article
+                                Articles
                             </Link>,
                         },
                     ]}
-                    style={{
-                        '.ant-menu-item': {
-                            height: '60px',
-                            lineHeight: '60px',
-                            fontSize: '18px',
-                            margin: 0,
-                            padding: '0 24px',
-                        },
-                        '.ant-menu-item-icon': {
-                            fontSize: '20px',
-                        },
-                        '.ant-menu-item-selected': {
-                            backgroundColor: '#f0f2f5',
-                        }
-                    }}
                 />
             </Sider>
 
             <Layout style={{ 
-                marginLeft: collapsed ? 80 : 200,  // Update this line to match new width
+                marginLeft: collapsed ? 0 : 280, // Changed from 80 to 0
                 transition: 'all 0.2s' 
             }}>
-                <Header style={{ padding: 0, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Header style={{ 
+                    padding: 0, 
+                    background: '#fff', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    boxShadow: '0 2px 8px 0 rgba(29,35,41,.05)'
+                }}>
                     <Button
                         type="text"
                         icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}

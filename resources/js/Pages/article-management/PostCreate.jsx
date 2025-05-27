@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { Input, Button, Form, message, Space } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { Input, Button, Form, message, Select, Upload, Row, Col, Tag } from 'antd';
+import { ArrowLeftOutlined, PictureOutlined, SaveOutlined, DeleteOutlined, MoreOutlined } from '@ant-design/icons';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import RichTextEditor from '@/Components/RichTextEditor';
+
+const { TextArea } = Input;
+const { Option } = Select;
 
 export default function PostCreate() {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
+    const [content, setContent] = useState('');
 
     const handleBack = () => {
         router.get('/article');
@@ -16,9 +20,29 @@ export default function PostCreate() {
     const onFinish = async (values) => {
         setLoading(true);
         try {
-            await router.post('/posts', values);
+            const formData = new FormData();
+            
+            // Append all form fields
+            Object.keys(values).forEach(key => {
+                if (key === 'thumbnail' && values[key]?.file) {
+                    formData.append('thumbnail', values[key].file);
+                } else if (values[key] !== undefined && values[key] !== null) {
+                    formData.append(key, values[key]);
+                }
+            });
+            
+            // Add content from rich text editor
+            formData.append('content', content);
+
+            await router.post('/posts', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
+            
             message.success('Post created successfully');
             form.resetFields();
+            setContent('');
         } catch (error) {
             message.error('Failed to create post');
         } finally {
@@ -26,52 +50,148 @@ export default function PostCreate() {
         }
     };
 
+    const handleThumbnailChange = ({ fileList }) => {
+        form.setFieldsValue({ thumbnail: fileList[0] });
+    };
+
+    const saveDraft = () => {
+        message.success('Draft saved successfully');
+    };
+
     return (
         <AuthenticatedLayout>
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="absolute top-10">
-                        <Button 
-                            onClick={handleBack}
-                            icon={<ArrowLeftOutlined />}
-                            className="flex items-center"
-                        >
-                        </Button>
-                    </div>
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mt-12">
-                        <Form
-                            form={form}
-                            layout="vertical"
-                            onFinish={onFinish}
-                        >
-                            <Form.Item
-                                label="Title"
-                                name="title"
-                                rules={[{ required: true, message: 'Please input the title!' }]}
-                            >
-                                <Input size="large" placeholder="Enter post title" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Content"
-                                name="content"
-                                rules={[{ required: true, message: 'Please input the content!' }]}
-                            >
-                                <RichTextEditor />
-                            </Form.Item>
-
-                            <Form.Item>
+            <div className="min-h-screen bg-gray-50">
+                {/* Header Section */}
+                <div className="bg-white border-b sticky top-0 z-10">
+                    <div className="max-w-7xl mx-auto px-6 py-4">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-4">
+                                <Button 
+                                    icon={<ArrowLeftOutlined />} 
+                                    type="text" 
+                                    onClick={handleBack}
+                                    className="text-gray-600 hover:text-gray-900"
+                                />
+                                <div>
+                                    <h1 className="text-xl font-semibold text-blue-500">Create Article</h1>
+                                    <p className="text-sm text-gray-500">Write and publish your new blog post</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                                <Button 
+                                    icon={<SaveOutlined />} 
+                                    onClick={saveDraft}
+                                    className="border-gray-300"
+                                >
+                                    Save Draft
+                                </Button>
                                 <Button 
                                     type="primary" 
                                     htmlType="submit" 
                                     loading={loading}
-                                    size="large"
+                                    onClick={() => form.submit()}
+                                    className="bg-blue-600 hover:bg-blue-700"
                                 >
-                                    Publish Post
+                                    Publish
                                 </Button>
-                            </Form.Item>
-                        </Form>
+                            </div>
+                        </div>
                     </div>
+                </div>
+
+                {/* Main Content */}
+                <div className="max-w-7xl mx-auto px-6 py-8">
+                    <Form
+                        form={form}
+                        layout="vertical"
+                        onFinish={onFinish}
+                        className="space-y-0"
+                    >
+                        <Row gutter={32}>
+                            {/* Main Editor Column */}
+                            <Col xs={24} lg={16}>
+                                <div className="bg-white rounded-lg shadow-sm border">
+                                    {/* Title Section */}
+                                    <div className="border-b p-6">
+                                        <Form.Item
+                                            name="title"
+                                            rules={[{ required: true, message: 'Please input the title!' }]}
+                                            className="mb-0"
+                                        >
+                                            <Input 
+                                                placeholder="Enter your article title..." 
+                                                className="text-2xl font-bold border-0 px-0 focus:shadow-none"
+                                                bordered={false}
+                                                style={{ fontSize: '24px', fontWeight: '600' }}
+                                            />
+                                        </Form.Item>
+                                    </div>
+
+                                    {/* Content Editor */}
+                                    <div className="p-6">
+                                        <Form.Item
+                                            name="content"
+                                            className="mb-0"
+                                        >
+                                            <RichTextEditor 
+                                                content={content}
+                                                onChange={setContent}
+                                            />
+                                        </Form.Item>
+                                    </div>
+                                </div>
+                            </Col>
+
+                            {/* Sidebar */}
+                            <Col xs={24} lg={8}>
+                                <div className="space-y-6">
+                                    {/* Publish Settings */}
+
+
+                                    {/* Excerpt */}
+                                    <div className="bg-white rounded-lg shadow-sm border p-6">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Excerpt</h3>
+                                        <Form.Item
+                                            name="excerpt"
+                                            rules={[{ required: true, message: 'Please input the excerpt!' }]}
+                                            className="mb-0"
+                                        >
+                                            <TextArea 
+                                                rows={4}
+                                                placeholder="Write a brief description of your article..."
+                                                showCount
+                                                maxLength={200}
+                                                className="resize-none"
+                                            />
+                                        </Form.Item>
+                                    </div>
+
+                                    {/* Featured Image */}
+                                    <div className="bg-white rounded-lg shadow-sm border p-6">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Featured Image</h3>
+                                        <Form.Item
+                                            name="thumbnail"
+                                            className="mb-0"
+                                        >
+                                            <Upload
+                                                listType="picture-card"
+                                                maxCount={1}
+                                                beforeUpload={() => false}
+                                                onChange={handleThumbnailChange}
+                                                accept="image/*"
+                                                className="w-full"
+                                            >
+                                                <div className="text-center">
+                                                    <PictureOutlined className="text-2xl text-gray-400 mb-2" />
+                                                    <div className="text-sm text-gray-600">Upload Image</div>
+                                                </div>
+                                            </Upload>
+                                        </Form.Item>
+                                    </div>
+                                </div>
+                            </Col>
+                        </Row>
+                    </Form>
                 </div>
             </div>
         </AuthenticatedLayout>
