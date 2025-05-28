@@ -1,5 +1,12 @@
 import { Layout, Menu, Button, Dropdown, Space } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined, DashboardOutlined, FileTextOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons';
+import { 
+    MenuFoldOutlined, 
+    MenuUnfoldOutlined, 
+    DashboardOutlined, 
+    FileTextOutlined, 
+    UserOutlined, 
+    LogoutOutlined 
+} from '@ant-design/icons';
 import { Link, usePage, router } from "@inertiajs/react";
 import { useState } from "react";
 
@@ -26,14 +33,62 @@ export default function AuthenticatedLayout({ children, fullHeight = false, titl
         }
     ];
 
+    // Custom styles for sidebar menu
+    const menuStyle = {
+        border: 'none',
+        padding: '8px 0',
+    };
+
+    // Custom CSS class untuk menu items dengan right border indicator
+    const menuItemClass = `
+        .ant-menu-item {
+            position: relative;
+            margin: 0;
+            padding-left: 24px !important;
+            transition: all 0.2s;
+        }
+        
+        .ant-menu-item::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 0;
+            background-color: #1890ff;
+            transition: width 0.2s;
+        }
+        
+        .ant-menu-item:hover::after {
+            width: 3px;
+        }
+        
+        .ant-menu-item-selected::after {
+            width: 3px;
+            background-color: #1890ff;
+        }
+        
+        .ant-menu-item:hover {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+        
+        .ant-menu-item-selected {
+            background-color: rgba(24, 144, 255, 0.1) !important;
+        }
+    `;
+
     return (
-        <Layout style={{ minHeight: '100vh', height: fullHeight ? '100vh' : 'auto' }}>
+        <Layout style={{ minHeight: '100vh' }}>
+            {/* Inject custom CSS */}
+            <style>{menuItemClass}</style>
+            
+            {/* Sidebar - Disederhanakan */}
             <Sider 
                 trigger={null} 
                 collapsible 
                 collapsed={collapsed}
                 theme="light"
-                width={280}
+                width={250}
                 collapsedWidth={0}
                 style={{
                     overflow: 'auto',
@@ -42,114 +97,109 @@ export default function AuthenticatedLayout({ children, fullHeight = false, titl
                     left: 0,
                     top: 0,
                     bottom: 0,
-                    boxShadow: collapsed ? 'none' : '2px 0 8px 0 rgba(29,35,41,.05)',
-                    transition: 'all 0.2s',
+                    boxShadow: collapsed ? 'none' : '0 0 10px rgba(0,0,0,0.05)',
+                    zIndex: 999,
                 }}
             >
-                <div className="p-6 mb-4">
-                    <h2 className="text-gray-800 font-bold text-3xl">
-                        YOURLOGO
+                {/* Logo Area */}
+                <div className="p-4 text-center border-b border-gray-100">
+                    <h2 className="text-gray-800 font-bold text-xl">
+                        MY BLOG CMS
                     </h2>
                 </div>
                 
+                {/* Navigation Menu - Dengan hover effect sederhana */}
                 <Menu
                     theme="light"
                     mode="inline"
                     selectedKeys={[route().current()]}
-                    style={{
-                        border: 'none',
-                        fontSize: '17px'
-                    }}
+                    style={menuStyle}
                     items={[
                         {
                             key: 'dashboard',
                             icon: <DashboardOutlined />,
-                            label: <Link 
-                                href={route("dashboard")}
-                                className="hover:#4169e1 transition-colors"
-                                style={{ fontSize: '17px', fontWeight: 'bold' }}
-                            >
-                                Dashboard
-                            </Link>,
-                            style: { marginBottom: '8px', height: '48px' }
+                            label: <Link href={route("dashboard")}>Dashboard</Link>,
                         },
                         {
                             key: 'article',
                             icon: <FileTextOutlined />,
                             label: <span 
-                                onClick={() => {
-                                    router.get(route('article'), {}, {
-                                        preserveState: false,
-                                        replace: true,
-                                    });
-                                }}
-                                className="hover:#4169e1 transition-colors cursor-pointer"
-                                style={{ fontSize: '17px', fontWeight: 'bold' }}
+                                onClick={() => router.get(route('article'), {}, {
+                                    preserveState: false,
+                                    replace: true,
+                                })}
+                                className="cursor-pointer"
                             >
                                 Articles
                             </span>,
-                            style: { marginBottom: '8px', height: '48px' }
                         },
                     ]}
                 />
             </Sider>
 
+            {/* Main Layout */}
             <Layout style={{ 
-                marginLeft: collapsed ? 0 : 280,
-                transition: 'all 0.2s',
-                height: fullHeight ? '100vh' : 'auto',
-                display: fullHeight ? 'flex' : 'block',
-                flexDirection: fullHeight ? 'column' : 'initial'
+                marginLeft: collapsed ? 0 : 250,
+                transition: 'margin 0.2s',
+                minHeight: '100vh'
             }}>
+                {/* Header - Disederhanakan */}
                 <Header style={{ 
-                    padding: '0', 
+                    padding: '0 16px', 
                     background: '#fff', 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'space-between',
-                    boxShadow: '0 2px 8px 0 rgba(29,35,41,.05)',
-                    flexShrink: fullHeight ? 0 : 'initial',
-                    height: '80px',
-                    paddingBottom: '0px'
+                    height: '60px',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 998,
                 }}>
-                    <div className="flex items-end gap-4 px-8">
+                    <div className="flex items-center gap-3">
+                        {/* Toggle Button */}
                         <Button
                             type="text"
                             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                             onClick={() => setCollapsed(!collapsed)}
-                            style={{ fontSize: '16px', width: 64, height: 64 }}
+                            style={{ fontSize: '16px' }}
                         />
+                        
+                        {/* Page Title */}
                         {title && (
-                            <div className="pb-1">
-                                <h1 className="text-2xl font-bold mb-0" style={{ color: '#4169e1' }}>{title}</h1>
+                            <div>
+                                <h1 className="text-lg font-medium m-0">{title}</h1>
                                 {subtitle && (
-                                    <p className="text-base text-gray-500 mb-0">{subtitle}</p>
+                                    <p className="text-xs text-gray-500 m-0">{subtitle}</p>
                                 )}
                             </div>
                         )}
                     </div>
                     
-                    <Space style={{ marginRight: 32, alignSelf: 'flex-end', paddingBottom: '12px' }}>
-                        <Dropdown
-                            menu={{ items: userMenuItems }}
-                            placement="bottomRight"
-                            trigger={['click']}
-                        >
-                            <Button type="text" icon={<UserOutlined />}>
-                                {user.name}
-                            </Button>
-                        </Dropdown>
-                    </Space>
+                    {/* User Menu */}
+                    <Dropdown
+                        menu={{ items: userMenuItems }}
+                        placement="bottomRight"
+                        trigger={['click']}
+                    >
+                        <Button type="text">
+                            <Space>
+                                <UserOutlined />
+                                <span>{user.name}</span>
+                            </Space>
+                        </Button>
+                    </Dropdown>
                 </Header>
 
+                {/* Content Area */}
                 <Content style={{ 
-                    margin: fullHeight ? 0 : '24px 16px', 
-                    padding: fullHeight ? 0 : 24, 
-                    minHeight: 280,
-                    flex: fullHeight ? 1 : 'initial',
-                    overflow: fullHeight ? 'hidden' : 'initial'
+                    padding: '20px',
+                    backgroundColor: '#f5f7fa',
+                    minHeight: 'calc(100vh - 60px)'
                 }}>
-                    {children}
+                    <div className="bg-white p-6 rounded-md shadow-sm">
+                        {children}
+                    </div>
                 </Content>
             </Layout>
         </Layout>
