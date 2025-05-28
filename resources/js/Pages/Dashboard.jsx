@@ -1,86 +1,78 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { Card, Typography, Input, Select, Row, Col, Button } from 'antd';
-import { FileTextOutlined, CheckCircleOutlined, EditOutlined, SearchOutlined } from '@ant-design/icons';
+import { Card, Typography, Row, Col, Button } from 'antd';
+import { FileTextOutlined, CheckCircleOutlined, EditOutlined, PlusOutlined, EyeOutlined } from '@ant-design/icons';
 import { router } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
 
-const { Title, Paragraph, Text } = Typography;
-const { Search } = Input;
-const { Option } = Select;
+import ArticleCard from '@/Components/ArticleCard';
+import SearchAndFilters from '@/Components/SearchAndFilters';
+import EmptyState from '@/Components/EmptyState';
+import useFilters from '@/Hooks/useFilters';
+
+const { Title, Text } = Typography;
 
 export default function Dashboard({ stats, posts, filters }) {
-    const [searchTerm, setSearchTerm] = useState(filters?.search || '');
-    const [dateRange, setDateRange] = useState(filters?.date_range || '');
-    const [sortBy, setSortBy] = useState(filters?.sort || 'published_at');
-    const [sortOrder, setSortOrder] = useState(filters?.order || 'desc');
+    const {
+        searchTerm,
+        setSearchTerm,
+        dateRange,
+        sortBy,
+        sortOrder,
+        handleSearch,
+        handleDateRangeChange,
+        handleSortChange,
+        handleOrderChange,
+        clearFilters
+    } = useFilters(filters, 'dashboard');
 
-    const handleEdit = (post) => {
+    // View blog post on landing page
+    const handleViewPost = (post) => {
+        window.open(`/blog/${post.slug}`, '_blank');
+    };
+
+    // Edit post in CMS
+    const handleEditPost = (post) => {
         router.get(`/posts/${post.id}/edit`);
     };
 
-    const applyFilters = (newFilters = {}) => {
-        const params = {
-            search: searchTerm,
-            date_range: dateRange,
-            sort: sortBy,
-            order: sortOrder,
-            ...newFilters
-        };
-
-        // Remove empty values
-        Object.keys(params).forEach(key => {
-            if (!params[key] || params[key] === '') {
-                delete params[key];
-            }
-        });
-
-        router.get(route('dashboard'), params, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
-    };
-
-    const handleSearch = (value) => {
-        setSearchTerm(value);
-        applyFilters({ search: value });
-    };
-
-    const handleDateRangeChange = (value) => {
-        setDateRange(value);
-        applyFilters({ date_range: value });
-    };
-
-    const handleSortChange = (value) => {
-        setSortBy(value);
-        applyFilters({ sort: value });
-    };
-
-    const handleOrderChange = (value) => {
-        setSortOrder(value);
-        applyFilters({ order: value });
-    };
-
-    const clearFilters = () => {
-        setSearchTerm('');
-        setDateRange('');
-        setSortBy('published_at');
-        setSortOrder('desc');
-        
-        router.get(route('dashboard'), {}, {
-            preserveState: false,
-            replace: true,
-        });
-    };
-
-    // Sync state with URL parameters
-    useEffect(() => {
-        setSearchTerm(filters?.search || '');
-        setDateRange(filters?.date_range || '');
-        setSortBy(filters?.sort || 'published_at');
-        setSortOrder(filters?.order || 'desc');
-    }, [filters]);
+    const filterConfig = [
+        {
+            placeholder: "All Time",
+            allowClear: true,
+            width: 120,
+            value: dateRange || undefined,
+            onChange: handleDateRangeChange,
+            options: [
+                { value: "today", label: "Today" },
+                { value: "week", label: "This Week" },
+                { value: "month", label: "This Month" },
+                { value: "year", label: "This Year" }
+            ]
+        },
+        {
+            placeholder: "Published Date",
+            allowClear: false,
+            width: 140,
+            value: sortBy,
+            onChange: handleSortChange,
+            options: [
+                { value: "published_at", label: "Published Date" },
+                { value: "created_at", label: "Created Date" },
+                { value: "title", label: "Title" }
+            ]
+        },
+        {
+            placeholder: "Newest",
+            allowClear: false,
+            width: 100,
+            value: sortOrder,
+            onChange: handleOrderChange,
+            options: [
+                { value: "desc", label: "Newest" },
+                { value: "asc", label: "Oldest" }
+            ]
+        }
+    ];
 
     return (
         <AuthenticatedLayout
@@ -187,7 +179,7 @@ export default function Dashboard({ stats, posts, filters }) {
                         </Col>
                     </Row>
 
-                    {/* Published Articles Header */}
+                    {/* Section Header */}
                     <div className="flex justify-between items-start gap-6 mb-6">
                         <div>
                             <Title level={4} className="mb-1">Recent Published Articles</Title>
@@ -199,89 +191,44 @@ export default function Dashboard({ stats, posts, filters }) {
                             </Text>
                         </div>
                         
-                        <Button 
-                            type="default"
-                            onClick={() => router.get('/article')}
-                            style={{
-                                borderRadius: '6px',
-                                height: '36px',
-                                fontWeight: '500'
-                            }}
-                        >
-                            View All Articles
-                        </Button>
+                        <div className="flex gap-3">
+                            <Button 
+                                type="default"
+                                icon={<EyeOutlined />}
+                                onClick={() => window.open('/blog', '_blank')}
+                                style={{
+                                    borderRadius: '6px',
+                                    height: '36px',
+                                    fontWeight: '500'
+                                }}
+                            >
+                                View Blog
+                            </Button>
+                            <Button 
+                                type="default"
+                                onClick={() => router.get('/article')}
+                                style={{
+                                    borderRadius: '6px',
+                                    height: '36px',
+                                    fontWeight: '500'
+                                }}
+                            >
+                                Manage Articles
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Search and Filters */}
-                    <div className="flex items-center gap-4 justify-between">
-                        {/* Search Bar */}
-                        <div className="flex-1">
-                            <Search
-                                placeholder="Search published articles..."
-                                allowClear
-                                size="large"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                onSearch={handleSearch}
-                                onClear={() => handleSearch('')}
-                                style={{ maxWidth: '400px' }}
-                            />
-                        </div>
-
-                        {/* Filters */}
-                        <div className="flex gap-3 items-center flex-shrink-0">
-                            <Text type="secondary" className="text-sm">Filter:</Text>
-                            
-                            <Select
-                                placeholder="All Time"
-                                allowClear
-                                size="middle"
-                                style={{ width: 120 }}
-                                value={dateRange || undefined}
-                                onChange={handleDateRangeChange}
-                                className="filter-select"
-                            >
-                                <Option value="today">Today</Option>
-                                <Option value="week">This Week</Option>
-                                <Option value="month">This Month</Option>
-                                <Option value="year">This Year</Option>
-                            </Select>
-
-                            <Select
-                                size="middle"
-                                style={{ width: 140 }}
-                                value={sortBy}
-                                onChange={handleSortChange}
-                                className="filter-select"
-                            >
-                                <Option value="published_at">Published Date</Option>
-                                <Option value="created_at">Created Date</Option>
-                                <Option value="title">Title</Option>
-                            </Select>
-
-                            <Select
-                                size="middle"
-                                style={{ width: 100 }}
-                                value={sortOrder}
-                                onChange={handleOrderChange}
-                                className="filter-select"
-                            >
-                                <Option value="desc">Newest</Option>
-                                <Option value="asc">Oldest</Option>
-                            </Select>
-
-                            {(searchTerm || dateRange) && (
-                                <Button 
-                                    onClick={clearFilters}
-                                    size="middle"
-                                    type="link"
-                                    style={{ padding: 0, height: 'auto' }}
-                                >
-                                    Clear
-                                </Button>
-                            )}
-                        </div>
-                    </div>
+                    <SearchAndFilters
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        onSearch={handleSearch}
+                        filters={filterConfig}
+                        onClearFilters={clearFilters}
+                        showClearButton={searchTerm || dateRange}
+                        searchPlaceholder="Search published articles..."
+                        searchMaxWidth="400px"
+                    />
                 </div>
 
                 {/* Content Area */}
@@ -289,109 +236,53 @@ export default function Dashboard({ stats, posts, filters }) {
                     <div style={{ paddingLeft: '96px', paddingRight: '32px', paddingTop: '24px', paddingBottom: '24px' }}>
                         {posts && posts.length > 0 ? (
                             <div className="space-y-4">
-                                {posts.map((item) => (
-                                    <Card
-                                        key={item.id}
-                                        className="cursor-pointer hover:shadow-lg transition-all duration-200 border border-gray-200"
-                                        onClick={() => handleEdit(item)}
-                                        bodyStyle={{ padding: '20px' }}
-                                        style={{ borderRadius: '8px' }}
-                                    >
-                                        <div className="flex gap-4">
-                                            {/* Thumbnail */}
-                                            <div className="flex-shrink-0">
-                                                {item.thumbnail ? (
-                                                    <img
-                                                        width={120}
-                                                        height={80}
-                                                        alt={item.title}
-                                                        src={item.thumbnail}
-                                                        style={{
-                                                            objectFit: 'cover',
-                                                            width: '120px',
-                                                            height: '80px'
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <div
-                                                        style={{
-                                                            width: '120px',
-                                                            height: '80px',
-                                                            backgroundColor: '#f5f5f5',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            color: '#999'
-                                                        }}
-                                                    >
-                                                        <FileTextOutlined style={{ fontSize: '24px' }} />
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Content */}
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-start justify-between mb-2">
-                                                    <div className="flex-1 min-w-0">
-                                                        <Title 
-                                                            level={5} 
-                                                            className="mb-1 text-gray-900"
-                                                            style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}
-                                                        >
-                                                            {item.title}
-                                                        </Title>
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            <div
-                                                                style={{
-                                                                    width: '8px',
-                                                                    height: '8px',
-                                                                    borderRadius: '50%',
-                                                                    backgroundColor: '#52c41a'
-                                                                }}
-                                                            />
-                                                            <Text 
-                                                                type="secondary" 
-                                                                className="text-xs uppercase tracking-wide font-medium"
-                                                            >
-                                                                Published
-                                                            </Text>
-                                                        </div>
-                                                    </div>
-                                                    <Text type="secondary" className="text-xs whitespace-nowrap ml-4">
-                                                        {item.published_date}
-                                                    </Text>
-                                                </div>
-                                                
-                                                <Paragraph 
-                                                    className="text-gray-600 text-sm leading-relaxed mb-0" 
-                                                    ellipsis={{ rows: 2 }}
-                                                    style={{ margin: 0 }}
-                                                >
-                                                    {item.excerpt}
-                                                </Paragraph>
-                                            </div>
-                                        </div>
-                                    </Card>
+                                {posts.map((article) => (
+                                    <div key={article.id} className="relative group">
+                                        <ArticleCard
+                                            article={article}
+                                            onClick={() => handleViewPost(article)}
+                                            showStatus={false}
+                                            imageSize={{ width: 120, height: 80 }}
+                                            titleSize={{ level: 5, fontSize: '16px' }}
+                                            excerptRows={2}
+                                        />
+                                        {/* Edit Button Overlay */}
+                                        <Button
+                                            type="default"
+                                            icon={<EditOutlined />}
+                                            size="small"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleEditPost(article);
+                                            }}
+                                            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                            style={{
+                                                borderRadius: '4px',
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                                backgroundColor: 'white'
+                                            }}
+                                        >
+                                            Edit
+                                        </Button>
+                                    </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-16">
-                                <div className="mb-4">
-                                    <CheckCircleOutlined style={{ fontSize: '48px', color: '#d9d9d9' }} />
-                                </div>
-                                <Title level={4} type="secondary" className="mb-2">
-                                    {searchTerm || dateRange 
-                                        ? 'No published articles match your search' 
-                                        : 'No published articles yet'
-                                    }
-                                </Title>
-                                <Paragraph type="secondary" className="mb-6">
-                                    {searchTerm || dateRange 
-                                        ? 'Try adjusting your search terms or filters'
-                                        : 'Publish your first article to see it here'
-                                    }
-                                </Paragraph>
-                            </div>
+                            <EmptyState
+                                icon={<CheckCircleOutlined style={{ fontSize: '64px', color: '#d9d9d9' }} />}
+                                title={searchTerm || dateRange 
+                                    ? 'No published articles match your search' 
+                                    : 'No published articles yet'
+                                }
+                                description={searchTerm || dateRange 
+                                    ? 'Try adjusting your search terms or filters'
+                                    : 'Publish your first article to see it here'
+                                }
+                                buttonText="Create First Article"
+                                buttonIcon={<PlusOutlined />}
+                                onButtonClick={() => router.get('/posts/create')}
+                                showButton={!(searchTerm || dateRange)}
+                            />
                         )}
                     </div>
                 </div>
