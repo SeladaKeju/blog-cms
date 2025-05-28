@@ -3,7 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PostsController;
 use App\Http\Controllers\ImageUploadController;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\BlogController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -14,10 +14,16 @@ Route::get('/', function () {
     ]);
 });
 
+// Public Blog Routes
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+
+// CMS Routes (Auth Required)
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Dashboard menggunakan PostsController
+    Route::get('/dashboard', [PostsController::class, 'dashboard'])->name('dashboard');
     
-    // Article routes
+    // Article management routes
     Route::get('/article', [PostsController::class, 'index'])->name('article');
     Route::get('/posts/create', [PostsController::class, 'create'])->name('posts.create');
     Route::post('/posts', [PostsController::class, 'store'])->name('posts.store');
