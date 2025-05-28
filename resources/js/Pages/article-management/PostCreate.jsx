@@ -19,6 +19,8 @@ export default function PostCreate() {
 
     const onFinish = async (values) => {
         setLoading(true);
+        console.log('Form values:', values); // Debug
+        
         try {
             const formData = new FormData();
             
@@ -33,19 +35,36 @@ export default function PostCreate() {
             
             // Add content from rich text editor
             formData.append('content', content);
+            
+            // Set default status if not provided
+            if (!values.status) {
+                formData.append('status', 'draft');
+            }
 
-            await router.post('/posts', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
+            console.log('Sending data...'); // Debug
+
+            // Gunakan router.post dengan callback yang benar
+            router.post('/posts', formData, {
+                forceFormData: true,
+                onSuccess: (page) => {
+                    console.log('Success response:', page); // Debug
+                    message.success('Post created successfully');
+                    form.resetFields();
+                    setContent('');
+                    // Redirect ke article list
+                    router.get('/article');
+                },
+                onError: (errors) => {
+                    console.error('Validation errors:', errors); // Debug
+                    message.error('Failed to create post: ' + Object.values(errors).join(', '));
+                },
+                onFinish: () => {
+                    setLoading(false);
                 }
             });
-            
-            message.success('Post created successfully');
-            form.resetFields();
-            setContent('');
         } catch (error) {
+            console.error('Create error:', error);
             message.error('Failed to create post');
-        } finally {
             setLoading(false);
         }
     };
@@ -55,7 +74,18 @@ export default function PostCreate() {
     };
 
     const saveDraft = () => {
-        message.success('Draft saved successfully');
+        // Set status to draft dan submit form
+        form.setFieldsValue({ status: 'draft' });
+        form.submit();
+    };
+
+    const publishPost = () => {
+        // Set status to published dan submit form
+        form.setFieldsValue({ 
+            status: 'published',
+            published_at: new Date().toISOString().slice(0, 16)
+        });
+        form.submit();
     };
 
     return (
@@ -146,7 +176,20 @@ export default function PostCreate() {
                             <Col xs={24} lg={8}>
                                 <div className="space-y-6">
                                     {/* Publish Settings */}
+                                    <div className="bg-white rounded-lg shadow-sm border p-6">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Publish Settings</h3>
 
+                                        <Form.Item
+                                            label="Publish Date"
+                                            name="published_at"
+                                            className="mb-0"
+                                        >
+                                            <Input 
+                                                type="datetime-local"
+                                                className="w-full"
+                                            />
+                                        </Form.Item>
+                                    </div>
 
                                     {/* Excerpt */}
                                     <div className="bg-white rounded-lg shadow-sm border p-6">

@@ -78,16 +78,74 @@ export default function PostEdit({ post }) {
     };
 
     const saveDraft = () => {
-        form.setFieldsValue({ status: 'draft' });
-        form.submit();
+        // Set status to draft dan submit form
+        const currentValues = form.getFieldsValue();
+        const formData = new FormData();
+        
+        // Append all current form fields
+        Object.keys(currentValues).forEach(key => {
+            if (key === 'thumbnail' && currentValues[key]?.file) {
+                formData.append('thumbnail', currentValues[key].file);
+            } else if (currentValues[key] !== undefined && currentValues[key] !== null) {
+                formData.append(key, currentValues[key]);
+            }
+        });
+        
+        // Add content and status
+        formData.append('content', content);
+        formData.append('status', 'draft');
+        formData.append('_method', 'PUT');
+        
+        setLoading(true);
+        router.post(`/posts/${post.id}`, formData, {
+            forceFormData: true,
+            onSuccess: () => {
+                message.success('Post saved as draft successfully');
+            },
+            onError: (errors) => {
+                console.error('Save draft errors:', errors);
+                message.error('Failed to save draft');
+            },
+            onFinish: () => {
+                setLoading(false);
+            }
+        });
     };
 
     const publishPost = () => {
-        form.setFieldsValue({ 
-            status: 'published',
-            published_at: new Date().toISOString().slice(0, 16)
+        // Set status to published dan submit form
+        const currentValues = form.getFieldsValue();
+        const formData = new FormData();
+        
+        // Append all current form fields
+        Object.keys(currentValues).forEach(key => {
+            if (key === 'thumbnail' && currentValues[key]?.file) {
+                formData.append('thumbnail', currentValues[key].file);
+            } else if (currentValues[key] !== undefined && currentValues[key] !== null) {
+                formData.append(key, currentValues[key]);
+            }
         });
-        form.submit();
+        
+        // Add content, status, and publish date
+        formData.append('content', content);
+        formData.append('status', 'published');
+        formData.append('published_at', new Date().toISOString().slice(0, 16));
+        formData.append('_method', 'PUT');
+        
+        setLoading(true);
+        router.post(`/posts/${post.id}`, formData, {
+            forceFormData: true,
+            onSuccess: () => {
+                message.success('Post published successfully');
+            },
+            onError: (errors) => {
+                console.error('Publish errors:', errors);
+                message.error('Failed to publish post');
+            },
+            onFinish: () => {
+                setLoading(false);
+            }
+        });
     };
 
     const handleDelete = () => {
