@@ -6,6 +6,7 @@ use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class PostsController extends Controller
 {
@@ -112,55 +113,65 @@ class PostsController extends Controller
     /**
      * Update the specified post in storage.
      */
-    public function update(Request $request, Post $post)
+    public function update(Request $request, $id)
     {
-        $validated = $request->validate([
-            'title' => 'required|max:255',
-            'excerpt' => 'required',
-            'content' => 'required',
-            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'required|in:' . implode(',', [
-                Post::STATUS_DRAFT,
-                Post::STATUS_PUBLISHED,
-                Post::STATUS_ARCHIVED
-            ]),
-            'published_at' => 'nullable|date'
-        ]);
+        $post = Post::findOrFail($id);
 
-        // Update slug if title has changed
-        if ($validated['title'] !== $post->title) {
-            $validated['slug'] = $this->generateUniqueSlug($validated['title'], $post->id);
-        }
+        try {
+            $validated = $request->validate([
+                'title' => 'required|max:255',
+                'excerpt' => 'required',
+                'content' => 'required',
+                'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'status' => 'required|in:' . implode(',', [
+                    Post::STATUS_DRAFT,
+                    Post::STATUS_PUBLISHED,
+                    Post::STATUS_ARCHIVED
+                ]),
+                'published_at' => 'nullable|date'
+            ]);
 
-        if ($request->hasFile('thumbnail')) {
-            // Delete old thumbnail if exists
-            if ($post->thumbnail) {
-                \Storage::disk('public')->delete($post->thumbnail);
+            // Update slug if title has changed
+            if ($validated['title'] !== $post->title) {
+                $validated['slug'] = $this->generateUniqueSlug($validated['title'], $post->id);
             }
-            $path = $request->file('thumbnail')->store('thumbnails', 'public');
-            $validated['thumbnail'] = $path;
+
+            if ($request->hasFile('thumbnail')) {
+                // Delete old thumbnail if exists
+                if ($post->thumbnail) {
+                    Storage::disk('public')->delete($post->thumbnail);
+                }
+                $path = $request->file('thumbnail')->store('thumbnails', 'public');
+                $validated['thumbnail'] = $path;
+            }
+
+            // Set published_at when status changes to published
+            if ($validated['status'] === Post::STATUS_PUBLISHED && 
+                $post->status !== Post::STATUS_PUBLISHED && 
+                !$validated['published_at']) {
+                $validated['published_at'] = now();
+            }
+
+            $post->update($validated);
+    
+
+            return redirect()->route('article')->with('success', 'Post updated successfully.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to update post: ' . $e->getMessage());
         }
-
-        // Set published_at when status changes to published
-        if ($validated['status'] === Post::STATUS_PUBLISHED && 
-            $post->status !== Post::STATUS_PUBLISHED && 
-            !$validated['published_at']) {
-            $validated['published_at'] = now();
-        }
-
-        $post->update($validated);
-
-        return redirect()->route('article')->with('success', 'Post updated successfully.');
     }
 
     /**
      * Remove the specified post from storage.
      */
-    public function destroy(Post $post)
+    public function destroy($id)
     {
+        $post = Post::findOrFail($id);
+        
         // Delete thumbnail if exists
         if ($post->thumbnail) {
-            \Storage::disk('public')->delete($post->thumbnail);
+            Storage::disk('public')->delete($post->thumbnail);
         }
 
         $post->delete();
