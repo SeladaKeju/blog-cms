@@ -33,8 +33,7 @@ export default function RichTextEditor({ content, onChange }) {
             TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
             TextStyle,
             FontSize.configure({ types: ['textStyle'] })
-        ],
-        editorProps: {
+        ],        editorProps: {
             attributes: { class: 'prose prose-lg max-w-none focus:outline-none min-h-[500px] p-6' },
             handleDrop: (view, event, slice, moved) => handleFileDrop(event, moved),
             handlePaste: (view, event, slice) => handleFilePaste(event)
@@ -159,9 +158,7 @@ export default function RichTextEditor({ content, onChange }) {
         ]
     };
 
-    if (!editor) return null;
-
-    return (
+    if (!editor) return null;    return (
         <div className="border border-gray-200 rounded-lg overflow-hidden">
             {/* Toolbar */}
             <div className="flex items-center justify-between bg-gray-50 border-b border-gray-200 p-3">

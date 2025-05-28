@@ -13,11 +13,38 @@ class PostsController extends Controller
     /**
      * Display a listing of the posts.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $posts = Post::orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($post) {
+        try {
+            $query = Post::query();
+
+            // Search functionality
+            if ($request->filled('search')) {
+                $searchTerm = $request->get('search');
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->where('title', 'LIKE', "%{$searchTerm}%")
+                      ->orWhere('excerpt', 'LIKE', "%{$searchTerm}%")
+                      ->orWhere('content', 'LIKE', "%{$searchTerm}%");
+                });
+            }
+
+            // Status filter
+            if ($request->filled('status')) {
+                $query->where('status', $request->get('status'));
+            }
+
+            // Sort by
+            $sortBy = $request->get('sort', 'created_at');
+            $sortOrder = $request->get('order', 'desc');
+            
+            $allowedSorts = ['created_at', 'updated_at', 'title'];
+            if (in_array($sortBy, $allowedSorts)) {
+                $query->orderBy($sortBy, $sortOrder);
+            } else {
+                $query->orderBy('created_at', 'desc');
+            }
+
+            $posts = $query->get()->map(function ($post) {
                 return [
                     'id' => $post->id,
                     'title' => $post->title,
@@ -28,15 +55,34 @@ class PostsController extends Controller
                     'status' => $post->status,
                     'published_date' => $post->published_at ? $post->published_at->format('F j, Y') : 'Draft',
                     'published_at' => $post->published_at?->format('Y-m-d H:i:s'),
-                    'is_published' => $post->isPublished(),
+                    'is_published' => $post->status === 'published',
                     'created_at' => $post->created_at->format('F j, Y'),
                     'updated_at' => $post->updated_at->format('F j, Y'),
                 ];
             });
-        
-        return Inertia::render('article-management/article-manager', [
-            'posts' => $posts->toArray()
-        ]);
+            
+            return Inertia::render('article-management/article-manager', [
+                'posts' => $posts->toArray(),
+                'filters' => [
+                    'search' => $request->get('search', ''),
+                    'status' => $request->get('status', ''),
+                    'sort' => $request->get('sort', 'created_at'),
+                    'order' => $request->get('order', 'desc'),
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return Inertia::render('article-management/article-manager', [
+                'posts' => [],
+                'filters' => [
+                    'search' => '',
+                    'status' => '',
+                    'sort' => 'created_at',
+                    'order' => 'desc',
+                ],
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     /**
