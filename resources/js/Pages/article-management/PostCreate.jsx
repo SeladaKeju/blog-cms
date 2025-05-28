@@ -1,77 +1,55 @@
-import { useState } from 'react';
-import { router } from '@inertiajs/react';
-import { Input, Button, Form, message, Space } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { Form, Row } from 'antd';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import RichTextEditor from '@/Components/RichTextEditor';
+import ArticleHeader from '@/Components/ArticleHeader';
+import ArticleEditor from '@/Components/ArticleEditor';
+import ArticleSidebar from '@/Components/ArticleSidebar';
+import { useArticleForm } from '@/Hooks/useArticleForm';
 
 export default function PostCreate() {
     const [form] = Form.useForm();
-    const [loading, setLoading] = useState(false);
-
-    const handleBack = () => {
-        router.get('/article');
-    };
-
-    const onFinish = async (values) => {
-        setLoading(true);
-        try {
-            await router.post('/posts', values);
-            message.success('Post created successfully');
-            form.resetFields();
-        } catch (error) {
-            message.error('Failed to create post');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const {
+        loading,
+        content,
+        setContent,
+        handleSubmit,
+        handleSaveDraft,
+        handlePublish,
+        handleThumbnailChange
+    } = useArticleForm();
 
     return (
         <AuthenticatedLayout>
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="absolute top-10">
-                        <Button 
-                            onClick={handleBack}
-                            icon={<ArrowLeftOutlined />}
-                            className="flex items-center"
-                        >
-                        </Button>
-                    </div>
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mt-12">
-                        <Form
-                            form={form}
-                            layout="vertical"
-                            onFinish={onFinish}
-                        >
-                            <Form.Item
-                                label="Title"
-                                name="title"
-                                rules={[{ required: true, message: 'Please input the title!' }]}
-                            >
-                                <Input size="large" placeholder="Enter post title" />
-                            </Form.Item>
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+                <ArticleHeader
+                    title="Create Article"
+                    subtitle="Write and publish your new blog post"
+                    onSaveDraft={() => handleSaveDraft(form)}
+                    onPublish={() => handlePublish(form)}
+                    loading={loading}
+                    publishText="Publish"
+                />
+            </div>
 
-                            <Form.Item
-                                label="Content"
-                                name="content"
-                                rules={[{ required: true, message: 'Please input the content!' }]}
-                            >
-                                <RichTextEditor />
-                            </Form.Item>
-
-                            <Form.Item>
-                                <Button 
-                                    type="primary" 
-                                    htmlType="submit" 
-                                    loading={loading}
-                                    size="large"
-                                >
-                                    Publish Post
-                                </Button>
-                            </Form.Item>
-                        </Form>
-                    </div>
+            {/* Scrollable Content */}
+            <div className="bg-gray-50 min-h-screen">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
+                    <Form
+                        form={form}
+                        layout="vertical"
+                        onFinish={handleSubmit}
+                    >
+                        <Row gutter={[32, 32]} className="flex-wrap">
+                            <ArticleEditor 
+                                content={content}
+                                onContentChange={setContent}
+                            />
+                            <ArticleSidebar 
+                                form={form}
+                                handleThumbnailChange={(fileList) => handleThumbnailChange(fileList, form)}
+                            />
+                        </Row>
+                    </Form>
                 </div>
             </div>
         </AuthenticatedLayout>
