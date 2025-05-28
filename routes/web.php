@@ -8,10 +8,12 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+// Root route redirect to login if not authenticated, dashboard if authenticated
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'phpVersion' => PHP_VERSION,
-    ]);
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
 });
 
 // Public Blog Routes

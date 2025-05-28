@@ -17,13 +17,25 @@ export default function Login({ status, canResetPassword }) {
         e.preventDefault();
 
         post(route('login'), {
+            onSuccess: () => {
+                // Redirect to dashboard after successful login
+                window.location.href = route('dashboard');
+            },
             onFinish: () => reset('password'),
         });
     };
 
     return (
         <GuestLayout>
-            <Head title="Log in" />
+            <Head title="CMS Login" />
+
+            {/* Header dengan Branding */}
+            <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                    Blog CMS
+                </h1>
+                <p className="text-gray-600">Sign in to manage your content</p>
+            </div>
 
             {status && (
                 <div className="mb-4 text-sm font-medium text-green-600">
@@ -44,6 +56,7 @@ export default function Login({ status, canResetPassword }) {
                         autoComplete="username"
                         isFocused={true}
                         onChange={(e) => setData('email', e.target.value)}
+                        placeholder="Enter your email"
                     />
 
                     <InputError message={errors.email} className="mt-2" />
@@ -60,6 +73,7 @@ export default function Login({ status, canResetPassword }) {
                         className="mt-1 block w-full"
                         autoComplete="current-password"
                         onChange={(e) => setData('password', e.target.value)}
+                        placeholder="Enter your password"
                     />
 
                     <InputError message={errors.password} className="mt-2" />
@@ -80,19 +94,54 @@ export default function Login({ status, canResetPassword }) {
                     </label>
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
+                <div className="mt-6">
+                    <PrimaryButton
+                        className="w-full justify-center"
+                        disabled={processing}
+                        style={{
+                            background: '#000',
+                            borderColor: '#000',
+                            height: '48px',
+                            fontSize: '16px',
+                            fontWeight: '500',
+                        }}
+                    >
+                        {processing ? 'Signing in...' : 'Sign In'}
+                    </PrimaryButton>
+                </div>
+
+                <div className="mt-6 text-center">
+                    <div className="text-sm text-gray-600 mb-3">
+                        Don't have an account?{' '}
+                        <Link
+                            href={route('register')}
+                            className="font-medium text-black hover:text-gray-700 underline"
+                        >
+                            Create one here
+                        </Link>
+                    </div>
+
                     {canResetPassword && (
                         <Link
                             href={route('password.request')}
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                            className="text-sm text-gray-600 underline hover:text-gray-900"
                         >
                             Forgot your password?
                         </Link>
                     )}
+                </div>
 
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Log in
-                    </PrimaryButton>
+                {/* Public Blog Link */}
+                <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+                    <p className="text-sm text-gray-600 mb-2">
+                        Want to view the public blog?
+                    </p>
+                    <Link
+                        href="/blog"
+                        className="text-sm font-medium text-blue-600 hover:text-blue-700 underline"
+                    >
+                        Visit Blog →
+                    </Link>
                 </div>
             </form>
         </GuestLayout>
