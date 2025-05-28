@@ -3,7 +3,6 @@ import { Head } from '@inertiajs/react';
 import { Card, Typography, Row, Col, Button } from 'antd';
 import { FileTextOutlined, CheckCircleOutlined, EditOutlined, PlusOutlined, EyeOutlined } from '@ant-design/icons';
 import { router } from '@inertiajs/react';
-
 import ArticleCard from '@/Components/ArticleCard';
 import SearchAndFilters from '@/Components/SearchAndFilters';
 import EmptyState from '@/Components/EmptyState';
@@ -74,6 +73,42 @@ export default function Dashboard({ stats, posts, filters }) {
         }
     ];
 
+    // Consistent button component for viewing blog
+    const ViewBlogButton = ({ text = "View Blog" }) => (
+        <Button 
+            type="default"
+            icon={<EyeOutlined />}
+            onClick={() => window.open('/blog', '_blank')}
+            className="dashboard-btn"
+        >
+            {text}
+        </Button>
+    );
+
+    // Consistent button component for managing articles
+    const ManageArticlesButton = ({ text = "Manage Articles" }) => (
+        <Button 
+            type="default"
+            onClick={() => router.get('/article')}
+            className="dashboard-btn"
+        >
+            {text}
+        </Button>
+    );
+
+    // Consistent create button component
+    const CreateButton = ({ text = "New Article" }) => (
+        <Button 
+            type="primary"
+            size="middle"
+            icon={<PlusOutlined />}
+            onClick={() => router.get('/posts/create')}
+            className="create-button"
+        >
+            {text}
+        </Button>
+    );
+
     return (
         <AuthenticatedLayout
             title="Dashboard" 
@@ -83,138 +118,23 @@ export default function Dashboard({ stats, posts, filters }) {
             <Head title="Dashboard" />
 
             <div className="h-full flex flex-col">
-                {/* Header Section */}
-                <div className="bg-white border-b border-gray-100" style={{ paddingLeft: '110px', paddingRight: '32px', paddingTop: '24px', paddingBottom: '24px' }}>
-                    {/* Statistics Cards */}
-                    <Row gutter={[24, 24]} className="mb-6">
-                        <Col xs={24} sm={8}>
-                            <Card
-                                style={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                                bodyStyle={{ padding: '20px' }}
-                            >
-                                <div className="flex items-center">
-                                    <div className="flex-shrink-0">
-                                        <div 
-                                            style={{
-                                                width: '48px',
-                                                height: '48px',
-                                                borderRadius: '8px',
-                                                backgroundColor: '#f0f9ff',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center'
-                                            }}
-                                        >
-                                            <FileTextOutlined style={{ fontSize: '24px', color: '#0284c7' }} />
-                                        </div>
-                                    </div>
-                                    <div className="ml-4">
-                                        <Text type="secondary" className="text-sm font-medium">Total Articles</Text>
-                                        <Title level={3} className="mb-0" style={{ color: '#0284c7', margin: 0 }}>
-                                            {stats.total_articles}
-                                        </Title>
-                                    </div>
-                                </div>
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={8}>
-                            <Card
-                                style={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                                bodyStyle={{ padding: '20px' }}
-                            >
-                                <div className="flex items-center">
-                                    <div className="flex-shrink-0">
-                                        <div 
-                                            style={{
-                                                width: '48px',
-                                                height: '48px',
-                                                borderRadius: '8px',
-                                                backgroundColor: '#f0fdf4',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center'
-                                            }}
-                                        >
-                                            <CheckCircleOutlined style={{ fontSize: '24px', color: '#16a34a' }} />
-                                        </div>
-                                    </div>
-                                    <div className="ml-4">
-                                        <Text type="secondary" className="text-sm font-medium">Published</Text>
-                                        <Title level={3} className="mb-0" style={{ color: '#16a34a', margin: 0 }}>
-                                            {stats.published_articles}
-                                        </Title>
-                                    </div>
-                                </div>
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={8}>
-                            <Card
-                                style={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                                bodyStyle={{ padding: '20px' }}
-                            >
-                                <div className="flex items-center">
-                                    <div className="flex-shrink-0">
-                                        <div 
-                                            style={{
-                                                width: '48px',
-                                                height: '48px',
-                                                borderRadius: '8px',
-                                                backgroundColor: '#fefce8',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center'
-                                            }}
-                                        >
-                                            <EditOutlined style={{ fontSize: '24px', color: '#ca8a04' }} />
-                                        </div>
-                                    </div>
-                                    <div className="ml-4">
-                                        <Text type="secondary" className="text-sm font-medium">Drafts</Text>
-                                        <Title level={3} className="mb-0" style={{ color: '#ca8a04', margin: 0 }}>
-                                            {stats.draft_articles}
-                                        </Title>
-                                    </div>
-                                </div>
-                            </Card>
-                        </Col>
-                    </Row>
-
+                {/* Header Section - with consistent padding */}
+                <div className="bg-white border-b border-gray-100 px-8 py-6">
                     {/* Section Header */}
-                    <div className="flex justify-between items-start gap-6 mb-6">
+                    <div className="flex items-center justify-between mb-6">
                         <div>
-                            <Title level={4} className="mb-1">Recent Published Articles</Title>
-                            <Text type="secondary">
+                            <h2 className="text-2xl font-medium text-gray-800">Recent Published Articles</h2>
+                            <p className="text-sm text-gray-500 mt-1">
                                 {posts && posts.length > 0 
                                     ? `${posts.length} recent published article${posts.length !== 1 ? 's' : ''}`
                                     : 'No published articles yet'
                                 }
-                            </Text>
+                            </p>
                         </div>
                         
                         <div className="flex gap-3">
-                            <Button 
-                                type="default"
-                                icon={<EyeOutlined />}
-                                onClick={() => window.open('/blog', '_blank')}
-                                style={{
-                                    borderRadius: '6px',
-                                    height: '36px',
-                                    fontWeight: '500'
-                                }}
-                            >
-                                View Blog
-                            </Button>
-                            <Button 
-                                type="default"
-                                onClick={() => router.get('/article')}
-                                style={{
-                                    borderRadius: '6px',
-                                    height: '36px',
-                                    fontWeight: '500'
-                                }}
-                            >
-                                Manage Articles
-                            </Button>
+                            <ViewBlogButton />
+                            <ManageArticlesButton />
                         </div>
                     </div>
 
@@ -231,40 +151,47 @@ export default function Dashboard({ stats, posts, filters }) {
                     />
                 </div>
 
-                {/* Content Area */}
+                {/* Content Area - with consistent padding */}
                 <div className="flex-1 overflow-auto bg-gray-50">
-                    <div style={{ paddingLeft: '96px', paddingRight: '32px', paddingTop: '24px', paddingBottom: '24px' }}>
+                    <div className="px-8 py-6">
                         {posts && posts.length > 0 ? (
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 {posts.map((article) => (
-                                    <div key={article.id} className="relative group">
-                                        <ArticleCard
-                                            article={article}
-                                            onClick={() => handleViewPost(article)}
-                                            showStatus={false}
-                                            imageSize={{ width: 120, height: 80 }}
-                                            titleSize={{ level: 5, fontSize: '16px' }}
-                                            excerptRows={2}
-                                        />
-                                        {/* Edit Button Overlay */}
-                                        <Button
-                                            type="default"
-                                            icon={<EditOutlined />}
-                                            size="small"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleEditPost(article);
-                                            }}
-                                            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                            style={{
-                                                borderRadius: '4px',
-                                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                                                backgroundColor: 'white'
-                                            }}
-                                        >
-                                            Edit
-                                        </Button>
-                                    </div>
+                                    <ArticleCard
+                                        key={article.id}
+                                        article={article}
+                                        onClick={() => handleViewPost(article)}
+                                        showStatus={false}
+                                        imageSize={{ width: 180, height: 120 }}
+                                        titleSize={{ level: 4, fontSize: '20px' }}
+                                        excerptRows={3}
+                                        actionButtons={[
+                                            <Button
+                                                key="edit"
+                                                type="text"
+                                                icon={<EditOutlined />}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleEditPost(article);
+                                                }}
+                                                className="card-action-btn"
+                                            >
+                                                Edit
+                                            </Button>,
+                                            <Button
+                                                key="view"
+                                                type="text"
+                                                icon={<EyeOutlined />}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleViewPost(article);
+                                                }}
+                                                className="card-action-btn"
+                                            >
+                                                View
+                                            </Button>
+                                        ]}
+                                    />
                                 ))}
                             </div>
                         ) : (
@@ -282,13 +209,15 @@ export default function Dashboard({ stats, posts, filters }) {
                                 buttonIcon={<PlusOutlined />}
                                 onButtonClick={() => router.get('/posts/create')}
                                 showButton={!(searchTerm || dateRange)}
+                                customButton={<CreateButton text="Create First Article" />}
                             />
                         )}
                     </div>
                 </div>
             </div>
 
-            <style jsx>{`
+            <style jsx global>{`
+                /* Styling for filters */
                 .filter-select .ant-select-selector {
                     border-radius: 6px !important;
                     border-color: #e5e7eb !important;
@@ -299,6 +228,51 @@ export default function Dashboard({ stats, posts, filters }) {
                 .filter-select.ant-select-focused .ant-select-selector {
                     border-color: #000 !important;
                     box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1) !important;
+                }
+                
+                /* Enhanced Create Button */
+                .create-button {
+                    border-radius: 6px !important;
+                    background-color: #1677ff !important;
+                    border: none !important;
+                    box-shadow: 0 2px 0 rgba(5, 125, 255, 0.1) !important;
+                    font-weight: 500 !important;
+                    height: 36px !important;
+                    padding: 0 16px !important;
+                }
+                
+                .create-button:hover {
+                    background-color: #4096ff !important;
+                    transform: translateY(-1px);
+                    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1) !important;
+                }
+                
+                .create-button:active {
+                    transform: translateY(0);
+                }
+                
+                /* Dashboard buttons */
+                .dashboard-btn {
+                    border-radius: 6px !important;
+                    height: 36px !important;
+                    font-weight: 500 !important;
+                    border-color: #d9d9d9 !important;
+                }
+                
+                .dashboard-btn:hover {
+                    border-color: #4096ff !important;
+                    color: #4096ff !important;
+                }
+                
+                /* Card action buttons */
+                .card-action-btn {
+                    border-radius: 4px !important;
+                    padding: 4px 12px !important;
+                }
+                
+                .card-action-btn:hover {
+                    color: #4096ff !important;
+                    background-color: rgba(64, 150, 255, 0.1) !important;
                 }
             `}</style>
         </AuthenticatedLayout>

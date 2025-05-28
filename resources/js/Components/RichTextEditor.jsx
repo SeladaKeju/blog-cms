@@ -263,12 +263,14 @@ export default function RichTextEditor({ content, onChange }) {
         ]
     };
 
-    if (!editor) return null;    return (
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-            {/* Toolbar */}
-            <div className="flex items-center justify-between bg-gray-50 border-b border-gray-200 p-3">
+    if (!editor) return null;
+    
+    return (
+        <div className="border border-gray-200 rounded-lg overflow-hidden flex flex-col">
+            {/* Fixed Toolbar */}
+            <div className="bg-gray-50 border-b border-gray-200 p-3 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                    {/* Tambahkan dropdown heading di awal toolbar */}
+                    {/* Dropdown heading */}
                     <Dropdown menu={headingItems} trigger={['click']} placement="bottomLeft">
                         <Button type="text" size="small">
                             {editor.isActive('heading', { level: 1 }) ? 'H1' :
@@ -280,7 +282,7 @@ export default function RichTextEditor({ content, onChange }) {
                     
                     <div className="w-px h-6 bg-gray-300 mx-2" />
                     
-                    {/* Toolbar items yang sudah ada */}
+                    {/* Format buttons */}
                     {formatItems.map((item) => (
                         <Tooltip key={item.key} title={item.tooltip}>
                             <Button 
@@ -295,10 +297,12 @@ export default function RichTextEditor({ content, onChange }) {
                     
                     <div className="w-px h-6 bg-gray-300 mx-2" />
                     
+                    {/* Font size dropdown */}
                     <Dropdown menu={fontSizeItems} trigger={['click']} placement="bottomLeft">
                         <Button type="text" icon={<FontSizeOutlined />} size="small" />
                     </Dropdown>
                     
+                    {/* List dropdown */}
                     <Dropdown menu={listItems} trigger={['click']} placement="bottomLeft">
                         <Button 
                             type={editor.isActive('bulletList') || editor.isActive('orderedList') ? 'primary' : 'text'}
@@ -307,10 +311,12 @@ export default function RichTextEditor({ content, onChange }) {
                         />
                     </Dropdown>
                     
+                    {/* Alignment dropdown */}
                     <Dropdown menu={alignmentItems} trigger={['click']} placement="bottomLeft">
                         <Button type="text" icon={<AlignLeftOutlined />} size="small" />
                     </Dropdown>
                     
+                    {/* Image upload */}
                     <Upload
                         customRequest={({ file }) => handleImageUpload(file)}
                         showUploadList={false}
@@ -326,13 +332,27 @@ export default function RichTextEditor({ content, onChange }) {
                 <div className="text-xs text-gray-400">Auto-saved</div>
             </div>
 
-            {/* Editor Content */}
-            <div className="relative">
+            {/* Scrollable Editor Content */}
+            <div className="overflow-auto flex-grow" style={{ maxHeight: '500px' }}>
                 <EditorContent 
                     editor={editor} 
-                    className="min-h-[500px] focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-opacity-20 transition-all"
+                    className="focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-opacity-20 transition-all"
                 />
             </div>
+
+            <style jsx>{`
+                /* Ensure the ProseMirror editor has proper padding */
+                .ProseMirror {
+                    padding: 1.5rem;
+                    min-height: 300px;
+                    outline: none;
+                }
+                
+                /* Fix editor sizing */
+                .tiptap {
+                    width: 100%;
+                }
+            `}</style>
         </div>
     );
 }
