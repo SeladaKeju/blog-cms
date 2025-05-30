@@ -19,7 +19,10 @@ class Post extends Model
         'content',
         'thumbnail',
         'status',
-        'published_at'
+        'published_at',
+        'author_id',        // Add for RBAC
+        'approved_by',      // Add for RBAC
+        'approved_at',      // Add for RBAC
     ];
 
     /**
@@ -30,15 +33,18 @@ class Post extends Model
     protected $casts = [
         'status' => 'string',
         'published_at' => 'datetime',
+        'approved_at' => 'datetime',  // Add for RBAC
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];
 
     /**
-     * Status constants
+     * Status constants (Updated for RBAC)
      */
     const STATUS_DRAFT = 'draft';
+    const STATUS_PENDING_REVIEW = 'pending_review';  // Add for RBAC
     const STATUS_PUBLISHED = 'published';
+    const STATUS_REJECTED = 'rejected';              // Add for RBAC
     const STATUS_ARCHIVED = 'archived';
 
     /**
@@ -71,6 +77,28 @@ class Post extends Model
         return 'slug';
     }
 
+    // RBAC Relationships
+    public function author()
+    {
+        return $this->belongsTo(User::class, 'author_id');
+    }
+
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    // Bookmark Relationships
+    public function bookmarks()
+    {
+        return $this->hasMany(Bookmark::class);
+    }
+
+    public function bookmarkedBy()
+    {
+        return $this->belongsToMany(User::class, 'bookmarks');
+    }
+
     /**
      * Get the formatted published date
      */
@@ -79,12 +107,50 @@ class Post extends Model
         return $this->published_at?->format('F j, Y');
     }
 
-    /**
-     * Check if the post is published
-     */
+    // Status Check Methods (Updated for RBAC)
     public function isPublished()
     {
         return $this->status === self::STATUS_PUBLISHED;
+    }
+
+    public function isDraft()
+    {
+        return $this->status === self::STATUS_DRAFT;
+    }
+
+    public function isPendingReview()
+    {
+        return $this->status === self::STATUS_PENDING_REVIEW;
+    }
+
+    public function isRejected()
+    {
+        return $this->status === self::STATUS_REJECTED;
+    }
+
+    // RBAC Action Methods
+    public function submitForReview()
+    {
+        $this->update(['status' => self::STATUS_PENDING_REVIEW]);
+    }
+
+    public function approve($approverId)
+    {
+        $this->update([
+            'status' => self::STATUS_PUBLISHED,
+            'approved_by' => $approverId,
+            'approved_at' => now(),
+            'published_at' => now(),
+        ]);
+    }
+
+    public function reject($approverId)
+    {
+        $this->update([
+            'status' => self::STATUS_REJECTED,
+            'approved_by' => $approverId,
+            'approved_at' => now(),
+        ]);
     }
 
     /**
@@ -103,6 +169,30 @@ class Post extends Model
     public function scopeDraft($query)
     {
         return $query->where('status', self::STATUS_DRAFT);
+    }
+
+    /**
+     * Scope a query to only include pending review posts
+     */
+    public function scopePendingReview($query)
+    {
+        return $query->where('status', self::STATUS_PENDING_REVIEW);
+    }
+
+    /**
+     * Scope a query to only include rejected posts
+     */
+    public function scopeRejected($query)
+    {
+        return $query->where('status', self::STATUS_REJECTED);
+    }
+
+    /**
+     * Scope by author
+     */
+    public function scopeByAuthor($query, $authorId)
+    {
+        return $query->where('author_id', $authorId);
     }
 
     /**
@@ -145,5 +235,16 @@ class Post extends Model
     public function getFullUrlAttribute()
     {
         return url('/blog/' . $this->slug);
+    }
+
+    // Helper method untuk check bookmark
+    public function isBookmarkedBy($userId): bool
+    {
+        return Bookmark::exists($userId, $this->id);
+    }
+
+    public function getBookmarkCount(): int
+    {
+        return $this->bookmarks()->count();
     }
 }

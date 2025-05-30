@@ -1,205 +1,243 @@
-import { Layout, Menu, Button, Dropdown, Space } from 'antd';
+import { useState } from 'react';
+import { Link, usePage } from '@inertiajs/react';
+import { Layout, Menu, Dropdown, Avatar, Button, Space, Typography } from 'antd';
 import { 
-    MenuFoldOutlined, 
-    MenuUnfoldOutlined, 
+    UserOutlined, 
     DashboardOutlined, 
     FileTextOutlined, 
-    UserOutlined, 
-    LogoutOutlined 
+    BookOutlined,
+    TeamOutlined,
+    SettingOutlined,
+    LogoutOutlined,
+    MenuFoldOutlined,
+    MenuUnfoldOutlined
 } from '@ant-design/icons';
-import { Link, usePage, router } from "@inertiajs/react";
-import { useState } from "react";
+import { router } from '@inertiajs/react';
 
 const { Header, Sider, Content } = Layout;
+const { Text } = Typography;
 
-export default function AuthenticatedLayout({ children, fullHeight = false, title, subtitle }) {
-    const user = usePage().props.auth.user;
+export default function AuthenticatedLayout({ 
+    title = "Dashboard", 
+    subtitle = "", 
+    fullHeight = false, 
+    children 
+}) {
+    const { auth } = usePage().props;
+    const user = auth.user;
     const [collapsed, setCollapsed] = useState(false);
 
+    // Get user role
+    const userRole = user.roles?.[0]?.name || 'viewer';
+    const permissions = user.permissions || [];
+
+    // Logout function
+    const handleLogout = () => {
+        router.post('/logout');
+    };
+
+    // User dropdown menu
     const userMenuItems = [
         {
             key: 'profile',
-            label: <Link href={route("profile.edit")}>Profile</Link>,
-            icon: <UserOutlined />
+            icon: <UserOutlined />,
+            label: 'Profile',
+            onClick: () => router.get('/profile'),
+        },
+        {
+            key: 'settings',
+            icon: <SettingOutlined />,
+            label: 'Settings',
+            onClick: () => router.get('/profile'),
+        },
+        {
+            type: 'divider',
         },
         {
             key: 'logout',
-            label: (
-                <Link href={route("logout")} method="post" as="button">
-                    Log Out
-                </Link>
-            ),
-            icon: <LogoutOutlined />
-        }
+            icon: <LogoutOutlined />,
+            label: 'Logout',
+            onClick: handleLogout,
+            danger: true,
+        },
     ];
 
-    // Custom styles for sidebar menu
-    const menuStyle = {
-        border: 'none',
-        padding: '8px 0',
-    };
+    // Navigation menu items based on role
+    const getMenuItems = () => {
+        const baseItems = [
+            {
+                key: 'dashboard',
+                icon: <DashboardOutlined />,
+                label: 'Dashboard',
+                onClick: () => router.get('/dashboard'),
+            },
+        ];
 
-    // Custom CSS class untuk menu items dengan right border indicator
-    const menuItemClass = `
-        .ant-menu-item {
-            position: relative;
-            margin: 0;
-            padding-left: 24px !important;
-            transition: all 0.2s;
+        // Add role-specific menu items
+        if (userRole === 'admin') {
+            baseItems.push(
+                {
+                    key: 'users',
+                    icon: <TeamOutlined />,
+                    label: 'Users',
+                    onClick: () => router.get('/admin/users'),
+                },
+                {
+                    key: 'applications',
+                    icon: <UserOutlined />,
+                    label: 'Applications',
+                    onClick: () => router.get('/admin/editor-applications'),
+                },
+                {
+                    key: 'posts',
+                    icon: <FileTextOutlined />,
+                    label: 'All Posts',
+                    onClick: () => router.get('/article'),
+                },
+                {
+                    key: 'pending-posts',
+                    icon: <FileTextOutlined />,
+                    label: 'Pending Posts',
+                    onClick: () => router.get('/admin/posts/pending'),
+                }
+            );
+        } else if (userRole === 'editor') {
+            baseItems.push(
+                {
+                    key: 'posts',
+                    icon: <FileTextOutlined />,
+                    label: 'My Posts',
+                    onClick: () => router.get('/article'),
+                },
+                {
+                    key: 'bookmarks',
+                    icon: <BookOutlined />,
+                    label: 'Bookmarks',
+                    onClick: () => router.get('/bookmarks'),
+                }
+            );
+        } else if (userRole === 'viewer') {
+            baseItems.push(
+                {
+                    key: 'bookmarks',
+                    icon: <BookOutlined />,
+                    label: 'Bookmarks',
+                    onClick: () => router.get('/bookmarks'),
+                },
+                {
+                    key: 'apply-editor',
+                    icon: <UserOutlined />,
+                    label: 'Apply Editor',
+                    onClick: () => router.get('/apply-editor'),
+                }
+            );
         }
-        
-        .ant-menu-item::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: 0;
-            bottom: 0;
-            width: 0;
-            background-color: #1890ff;
-            transition: width 0.2s;
-        }
-        
-        .ant-menu-item:hover::after {
-            width: 3px;
-        }
-        
-        .ant-menu-item-selected::after {
-            width: 3px;
-            background-color: #1890ff;
-        }
-        
-        .ant-menu-item:hover {
-            background-color: rgba(0, 0, 0, 0.03);
-        }
-        
-        .ant-menu-item-selected {
-            background-color: rgba(24, 144, 255, 0.1) !important;
-        }
-    `;
+
+        // Add blog link for all users
+        baseItems.push({
+            key: 'blog',
+            icon: <BookOutlined />,
+            label: 'View Blog',
+            onClick: () => window.open('/blog', '_blank'),
+        });
+
+        return baseItems;
+    };
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
-            {/* Inject custom CSS */}
-            <style>{menuItemClass}</style>
-            
-            {/* Sidebar - Disederhanakan */}
             <Sider 
                 trigger={null} 
                 collapsible 
                 collapsed={collapsed}
-                theme="light"
-                width={250}
-                collapsedWidth={0}
                 style={{
-                    overflow: 'auto',
-                    height: '100vh',
-                    position: 'fixed',
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    boxShadow: collapsed ? 'none' : '0 0 10px rgba(0,0,0,0.05)',
-                    zIndex: 999,
+                    background: '#fff',
+                    borderRight: '1px solid #f0f0f0'
                 }}
             >
-                {/* Logo Area */}
-                <div className="p-4 text-center border-b border-gray-100">
-                    <h2 className="text-gray-800 font-bold text-xl">
-                        MY BLOG CMS
-                    </h2>
+                <div className="p-4 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                        <Avatar size="large" icon={<UserOutlined />} />
+                        {!collapsed && (
+                            <div>
+                                <div className="font-medium text-gray-900">{user.name}</div>
+                                <div className="text-sm text-gray-500 capitalize">{userRole}</div>
+                            </div>
+                        )}
+                    </div>
                 </div>
                 
-                {/* Navigation Menu - Dengan hover effect sederhana */}
                 <Menu
-                    theme="light"
                     mode="inline"
-                    selectedKeys={[route().current()]}
-                    style={menuStyle}
-                    items={[
-                        {
-                            key: 'dashboard',
-                            icon: <DashboardOutlined />,
-                            label: <Link href={route("dashboard")}>Dashboard</Link>,
-                        },
-                        {
-                            key: 'article',
-                            icon: <FileTextOutlined />,
-                            label: <span 
-                                onClick={() => router.get(route('article'), {}, {
-                                    preserveState: false,
-                                    replace: true,
-                                })}
-                                className="cursor-pointer"
-                            >
-                                Articles
-                            </span>,
-                        },
-                    ]}
+                    style={{ borderRight: 0, marginTop: 16 }}
+                    items={getMenuItems()}
                 />
             </Sider>
-
-            {/* Main Layout */}
-            <Layout style={{ 
-                marginLeft: collapsed ? 0 : 250,
-                transition: 'margin 0.2s',
-                minHeight: '100vh'
-            }}>
-                {/* Header - Disederhanakan */}
-                <Header style={{ 
-                    padding: '0 16px', 
-                    background: '#fff', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    height: '60px',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 998,
-                }}>
-                    <div className="flex items-center gap-3">
-                        {/* Toggle Button */}
+            
+            <Layout>
+                <Header 
+                    style={{ 
+                        padding: '0 24px', 
+                        background: '#fff',
+                        borderBottom: '1px solid #f0f0f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                    }}
+                >
+                    <div className="flex items-center gap-4">
                         <Button
                             type="text"
                             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                             onClick={() => setCollapsed(!collapsed)}
-                            style={{ fontSize: '16px' }}
+                            style={{
+                                fontSize: '16px',
+                                width: 64,
+                                height: 64,
+                            }}
                         />
-                        
-                        {/* Page Title */}
-                        {title && (
-                            <div>
-                                <h1 className="text-lg font-medium m-0">{title}</h1>
-                                {subtitle && (
-                                    <p className="text-xs text-gray-500 m-0">{subtitle}</p>
-                                )}
-                            </div>
-                        )}
+                        <div>
+                            <h1 className="text-xl font-semibold text-gray-900 m-0">{title}</h1>
+                            {subtitle && (
+                                <Text type="secondary" className="text-sm">{subtitle}</Text>
+                            )}
+                        </div>
                     </div>
-                    
-                    {/* User Menu */}
-                    <Dropdown
-                        menu={{ items: userMenuItems }}
-                        placement="bottomRight"
-                        trigger={['click']}
-                    >
-                        <Button type="text">
-                            <Space>
-                                <UserOutlined />
-                                <span>{user.name}</span>
-                            </Space>
-                        </Button>
-                    </Dropdown>
-                </Header>
 
-                {/* Content Area */}
-                <Content style={{ 
-                    padding: '20px',
-                    backgroundColor: '#f5f7fa',
-                    minHeight: 'calc(100vh - 60px)'
-                }}>
-                    <div className="bg-white p-6 rounded-md shadow-sm">
-                        {children}
-                    </div>
+                    <Space size="middle">
+                        {/* Quick Actions based on role */}
+                        {(userRole === 'admin' || userRole === 'editor') && (
+                            <Button 
+                                type="primary"
+                                icon={<FileTextOutlined />}
+                                onClick={() => router.get('/posts/create')}
+                            >
+                                New Post
+                            </Button>
+                        )}
+
+                        {/* User Profile Dropdown */}
+                        <Dropdown
+                            menu={{ items: userMenuItems }}
+                            placement="bottomRight"
+                            arrow
+                        >
+                            <Button type="text" className="flex items-center gap-2">
+                                <Avatar size="small" icon={<UserOutlined />} />
+                                <span className="hidden md:inline">{user.name}</span>
+                            </Button>
+                        </Dropdown>
+                    </Space>
+                </Header>
+                
+                <Content
+                    style={{
+                        margin: 0,
+                        minHeight: fullHeight ? 'calc(100vh - 64px)' : 'auto',
+                        background: '#f5f5f5',
+                    }}
+                >
+                    {children}
                 </Content>
             </Layout>
         </Layout>
