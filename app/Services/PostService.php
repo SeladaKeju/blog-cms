@@ -10,18 +10,6 @@ use Illuminate\Support\Facades\Storage;
 class PostService
 {
     /**
-     * Get dashboard statistics
-     */
-    public function getDashboardStats(): array
-    {
-        return [
-            'total_articles' => Post::count(),
-            'published_articles' => Post::where('status', 'published')->count(),
-            'draft_articles' => Post::where('status', 'draft')->count(),
-        ];
-    }
-
-    /**
      * Get filtered published posts for dashboard
      */
     public function getPublishedPostsForDashboard(array $filters): array
