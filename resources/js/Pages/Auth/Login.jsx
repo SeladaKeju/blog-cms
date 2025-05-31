@@ -18,9 +18,7 @@ export default function Login({ status, canResetPassword }) {
         e.preventDefault();
 
         post(route('login'), {
-            onSuccess: () => {
-                window.location.href = route('dashboard');
-            },
+            // Hapus onSuccess karena redirect sudah dihandle di AuthenticatedSessionController
             onFinish: () => reset('password'),
         });
     };
@@ -78,7 +76,7 @@ export default function Login({ status, canResetPassword }) {
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
                                 Blog CMS
                             </h1>
-                            <p className="text-gray-600 font-medium">Sign in to manage your content</p>
+                            <p className="text-gray-600 font-medium">Sign in to access your account</p>
                         </div>
 
                         {/* Desktop Header */}
@@ -179,7 +177,7 @@ export default function Login({ status, canResetPassword }) {
                                                 Signing in...
                                             </div>
                                         ) : (
-                                            'Sign In to Dashboard'
+                                            'Sign In'
                                         )}
                                     </PrimaryButton>
                                 </div>
@@ -201,7 +199,7 @@ export default function Login({ status, canResetPassword }) {
                                     {/* Public Blog Link with Icon */}
                                     <div className="pt-4 border-t border-gray-100">
                                         <p className="text-sm text-gray-500 mb-2">
-                                            Want to view the public blog?
+                                            Want to browse without signing in?
                                         </p>
                                         <Link
                                             href="/blog"

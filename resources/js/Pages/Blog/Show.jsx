@@ -1,12 +1,22 @@
 import BlogLayout from '@/Layouts/BlogLayout';
 import { Head, Link } from '@inertiajs/react';
-import { Typography, Card, Row, Col, Divider } from 'antd';
-import { CalendarOutlined, ClockCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { Typography, Card, Row, Col, Button, Space, message } from 'antd';
+import { 
+    CalendarOutlined, 
+    ClockCircleOutlined, 
+    ArrowLeftOutlined,
+    EditOutlined,
+    HeartOutlined,
+    ShareAltOutlined,
+    UserOutlined,
+    UserAddOutlined,
+    LoginOutlined
+} from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 
 const { Title, Paragraph, Text } = Typography;
 
-export default function BlogShow({ post, relatedPosts }) {
+export default function BlogShow({ post, relatedPosts, auth }) {
     const [readingProgress, setReadingProgress] = useState(0);
 
     // Track reading progress
@@ -31,10 +41,10 @@ export default function BlogShow({ post, relatedPosts }) {
                 style={{ width: `${readingProgress}%` }}
             />
 
-            <Row justify="center">
+            <Row gutter={[32, 32]}>
                 {/* Main Content */}
-                <Col xs={24} lg={18} xl={16}>
-                    <div className="max-w-3xl mx-auto px-4">
+                <Col xs={24} lg={16}>
+                    <div className="max-w-4xl mx-auto px-4">
                         {/* Back Button */}
                         <div className="mb-8 mt-6">
                             <Link href="/blog" className="text-gray-500 hover:text-gray-700 transition-colors">
@@ -65,6 +75,46 @@ export default function BlogShow({ post, relatedPosts }) {
                                     <ClockCircleOutlined />
                                     <span>{post.reading_time}</span>
                                 </div>
+                                {post.author && (
+                                    <div className="flex items-center gap-2">
+                                        <UserOutlined />
+                                        <span>By {post.author}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Article Actions */}
+                            <div className="flex items-center gap-3 mb-8">
+                                <Button 
+                                    type="text" 
+                                    icon={<HeartOutlined />}
+                                    onClick={() => {
+                                        if (!auth?.user) {
+                                            message.info('Please login to bookmark articles');
+                                        } else {
+                                            message.success('Bookmark feature will be implemented');
+                                        }
+                                    }}
+                                >
+                                    Bookmark
+                                </Button>
+                                <Button 
+                                    type="text" 
+                                    icon={<ShareAltOutlined />}
+                                    onClick={() => {
+                                        if (navigator.share) {
+                                            navigator.share({
+                                                title: post.title,
+                                                url: window.location.href
+                                            });
+                                        } else {
+                                            navigator.clipboard.writeText(window.location.href);
+                                            message.success('Link copied to clipboard!');
+                                        }
+                                    }}
+                                >
+                                    Share
+                                </Button>
                             </div>
 
                             {/* Featured Image */}
@@ -100,7 +150,7 @@ export default function BlogShow({ post, relatedPosts }) {
                             </div>
                         </div>
 
-                        {/* Article Content - Enhanced readability by default */}
+                        {/* Article Content */}
                         <div 
                             className="prose max-w-none blog-content"
                             style={{ 
@@ -112,6 +162,26 @@ export default function BlogShow({ post, relatedPosts }) {
                             }}
                             dangerouslySetInnerHTML={{ __html: post.content }}
                         />
+
+                        {/* Call to Action After Article - For Viewers Only */}
+                        {auth?.userRole === 'viewer' && (
+                            <Card className="mt-12 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+                                <div className="text-center py-6">
+                                    <Title level={4} className="mb-4">
+                                        Enjoyed this article? Share your knowledge too!
+                                    </Title>
+                                    <Paragraph className="mb-6 text-gray-600">
+                                        Join our team of content creators and help shape the future of our blog community. 
+                                        Apply to become an editor and start publishing your own insights.
+                                    </Paragraph>
+                                    <Link href={route('editor-application.create')}>
+                                        <Button type="primary" size="large" icon={<EditOutlined />}>
+                                            Apply to Become an Editor
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </Card>
+                        )}
 
                         {/* Related Posts */}
                         {relatedPosts.length > 0 && (
@@ -156,6 +226,102 @@ export default function BlogShow({ post, relatedPosts }) {
                                 </Row>
                             </div>
                         )}
+                    </div>
+                </Col>
+
+                {/* Sidebar */}
+                <Col xs={24} lg={8}>
+                    <div className="sticky top-8">
+                        {/* Apply CTA for Viewers */}
+                        {auth?.userRole === 'viewer' ? (
+                            <Card title="Become a Contributor" className="mb-6 border-blue-200">
+                                <Paragraph>
+                                    Do you have insights to share? Join our community of content creators and start publishing your expertise.
+                                </Paragraph>
+                                <Link href={route('editor-application.create')}>
+                                    <Button type="primary" block icon={<EditOutlined />} size="large">
+                                        Apply as Editor
+                                    </Button>
+                                </Link>
+                                <div className="mt-3 space-y-1 text-xs text-gray-500">
+                                    <div>✓ Write your own articles</div>
+                                    <div>✓ Access editorial tools</div>
+                                    <div>✓ Build your audience</div>
+                                    <div>✓ Join our content team</div>
+                                </div>
+                            </Card>
+                        ) : !auth?.user ? (
+                            <Card title="Join Our Community" className="mb-6">
+                                <Paragraph>
+                                    Create an account to bookmark articles, apply as an editor, and engage with our community.
+                                </Paragraph>
+                                <Space direction="vertical" style={{ width: '100%' }}>
+                                    <Link href={route('register')}>
+                                        <Button type="primary" block icon={<UserAddOutlined />}>
+                                            Sign Up Free
+                                        </Button>
+                                    </Link>
+                                    <Link href={route('login')}>
+                                        <Button block icon={<LoginOutlined />}>
+                                            Already have an account?
+                                        </Button>
+                                    </Link>
+                                </Space>
+                            </Card>
+                        ) : auth?.userRole === 'editor' || auth?.userRole === 'admin' ? (
+                            <Card title="Creator Tools" className="mb-6">
+                                <Paragraph>
+                                    Access your dashboard to manage content and explore editorial features.
+                                </Paragraph>
+                                <Link href={route('dashboard')}>
+                                    <Button type="primary" block icon={<EditOutlined />}>
+                                        Go to Dashboard
+                                    </Button>
+                                </Link>
+                            </Card>
+                        ) : null}
+
+                        {/* Related Articles Preview */}
+                        {relatedPosts.length > 0 && (
+                            <Card title="Related Articles" className="mb-6">
+                                <div className="space-y-3">
+                                    {relatedPosts.slice(0, 3).map((relatedPost) => (
+                                        <Link key={relatedPost.id} href={`/blog/${relatedPost.slug}`}>
+                                            <div className="flex gap-2 p-2 rounded hover:bg-gray-50 transition-colors">
+                                                {relatedPost.thumbnail && (
+                                                    <img
+                                                        src={relatedPost.thumbnail}
+                                                        alt={relatedPost.title}
+                                                        style={{
+                                                            width: 40,
+                                                            height: 40,
+                                                            objectFit: 'cover',
+                                                            borderRadius: '4px'
+                                                        }}
+                                                    />
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-sm font-medium line-clamp-2">
+                                                        {relatedPost.title}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500">
+                                                        {relatedPost.published_date}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </Card>
+                        )}
+
+                        {/* About/Newsletter */}
+                        <Card title="Stay Updated">
+                            <Paragraph>
+                                Get the latest articles and insights delivered to your inbox.
+                            </Paragraph>
+                            <Button block>Subscribe to Newsletter</Button>
+                        </Card>
                     </div>
                 </Col>
             </Row>

@@ -6,63 +6,85 @@ use App\Models\EditorApplication;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB; // ADD THIS LINE
 use Inertia\Inertia;
 
 class EditorApplicationController extends Controller
 {
     /**
-     * Display a listing of editor applications (Admin only)
+     * Display list of editor applications (Admin only)
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Check permission
-        if (!Auth::user()->can('view-applications')) {
-            abort(403, 'Unauthorized');
+        $query = EditorApplication::with('user');
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
-        $applications = EditorApplication::with(['user', 'reviewer'])
-            ->recentFirst()
-            ->paginate(10);
+        // Search by user name or email
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->whereHas('user', function ($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('email', 'LIKE', "%{$searchTerm}%");
+            });
+        }
 
-        return Inertia::render('Admin/EditorApplications/Index', [
+        $applications = $query->orderBy('created_at', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        // Get stats
+        $stats = [
+            'total' => EditorApplication::count(),
+            'pending' => EditorApplication::where('status', 'pending')->count(),
+            'approved' => EditorApplication::where('status', 'approved')->count(),
+            'rejected' => EditorApplication::where('status', 'rejected')->count(),
+        ];
+
+        return Inertia::render('application-management/ApplicationList', [
             'applications' => $applications,
-            'stats' => [
-                'total' => EditorApplication::count(),
-                'pending' => EditorApplication::pending()->count(),
-                'approved' => EditorApplication::approved()->count(),
-                'rejected' => EditorApplication::rejected()->count(),
-            ]
+            'filters' => [
+                'search' => $request->search,
+                'status' => $request->status,
+            ],
+            'stats' => $stats
         ]);
     }
 
     /**
-     * Show the form for creating a new editor application
+     * Show the application form
      */
     public function create()
     {
         $user = Auth::user();
 
-        // Check if user is viewer
+        // Check if user is logged in
+        if (!$user) {
+            return redirect()->route('login')
+                ->with('message', 'Please login to apply as editor');
+        }
+
+        // Check if user is viewer (only viewers can apply)
         if (!$user->hasRole('viewer')) {
-            return redirect()->back()->with('error', 'Only viewers can apply to become editors.');
+            return redirect('/blog')
+                ->with('message', 'Only viewers can apply to become editors');
         }
 
-        // Check permission
-        if (!$user->can('apply-editor')) {
-            abort(403, 'Unauthorized');
-        }
-
-        // Check if user already has pending/approved application
-        $existingApplication = EditorApplication::byUser($user->id)
-            ->whereIn('status', [EditorApplication::STATUS_PENDING, EditorApplication::STATUS_APPROVED])
+        // Check for existing application
+        $existingApplication = EditorApplication::where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'approved'])
             ->first();
 
-        if ($existingApplication) {
-            return redirect()->route('editor-application.status')
-                ->with('info', 'You already have an application.');
-        }
-
-        return Inertia::render('Viewer/EditorApplication/Create');
+        return Inertia::render('EditorApplication/Apply', [
+            'auth' => [
+                'user' => $user,
+                'userRole' => $user->getRoleNames()->first(),
+            ],
+            'existingApplication' => $existingApplication
+        ]);
     }
 
     /**
@@ -72,129 +94,139 @@ class EditorApplicationController extends Controller
     {
         $user = Auth::user();
 
-        // Check permission
-        if (!$user->can('apply-editor')) {
-            abort(403, 'Unauthorized');
+        // Check if user is logged in
+        if (!$user) {
+            return redirect()->route('login')
+                ->with('error', 'Please login to apply');
         }
 
-        $request->validate([
+        // Check if user is viewer (only viewers can apply)
+        if (!$user->hasRole('viewer')) {
+            return redirect()->back()
+                ->withErrors(['error' => 'Only viewers can apply to become editors']);
+        }
+
+        // Validate request
+        $validated = $request->validate([
             'motivation' => 'required|string|min:100|max:1000',
             'experience' => 'nullable|string|max:1000',
             'portfolio_url' => 'nullable|url|max:255',
         ]);
 
-        // Check for existing application
-        $existingApplication = EditorApplication::byUser($user->id)
-            ->whereIn('status', [EditorApplication::STATUS_PENDING, EditorApplication::STATUS_APPROVED])
+        // Check for existing pending/approved application
+        $existingApplication = EditorApplication::where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'approved'])
             ->first();
 
         if ($existingApplication) {
-            return redirect()->back()->with('error', 'You already have a pending or approved application.');
+            if ($existingApplication->status === 'approved') {
+                return redirect()->back()
+                    ->withErrors(['error' => 'You are already an approved editor']);
+            }
+            
+            if ($existingApplication->status === 'pending') {
+                return redirect()->back()
+                    ->withErrors(['error' => 'You already have a pending application']);
+            }
         }
 
-        EditorApplication::create([
-            'user_id' => $user->id,
-            'motivation' => $request->motivation,
-            'experience' => $request->experience,
-            'portfolio_url' => $request->portfolio_url,
-        ]);
+        // Create new application
+        try {
+            EditorApplication::create([
+                'user_id' => $user->id,
+                'motivation' => $validated['motivation'],
+                'experience' => $validated['experience'],
+                'portfolio_url' => $validated['portfolio_url'],
+                'status' => 'pending',
+                'submitted_at' => now(),
+            ]);
 
-        return redirect()->route('dashboard')
-            ->with('success', 'Your editor application has been submitted successfully!');
+            return redirect('/blog')
+                ->with('message', 'Your editor application has been submitted successfully! We will review it and get back to you soon.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withErrors(['error' => 'Failed to submit application. Please try again.'])
+                ->withInput();
+        }
     }
 
     /**
-     * Display the specified editor application
+     * Show specific application details (Admin only)
      */
     public function show(EditorApplication $application)
     {
-        $user = Auth::user();
+        $application->load('user');
 
-        // Check permission (admin can view all, user can view own)
-        if (!$user->can('view-applications') && $application->user_id !== $user->id) {
-            abort(403, 'Unauthorized');
-        }
-
-        return Inertia::render('Admin/EditorApplications/Show', [
-            'application' => $application->load(['user', 'reviewer'])
-        ]);
-    }
-
-    /**
-     * Approve editor application
-     */
-    public function approve(EditorApplication $application)
-    {
-        // Check permission
-        if (!Auth::user()->can('approve-applications')) {
-            abort(403, 'Unauthorized');
-        }
-
-        if (!$application->isPending()) {
-            return redirect()->back()->with('error', 'Application has already been reviewed.');
-        }
-
-        $application->approve(Auth::id());
-
-        return redirect()->route('admin.editor-applications.index')
-            ->with('success', 'Application approved successfully! User is now an editor.');
-    }
-
-    /**
-     * Reject editor application
-     */
-    public function reject(Request $request, EditorApplication $application)
-    {
-        // Check permission
-        if (!Auth::user()->can('approve-applications')) {
-            abort(403, 'Unauthorized');
-        }
-
-        $request->validate([
-            'rejection_reason' => 'required|string|max:500',
-        ]);
-
-        if (!$application->isPending()) {
-            return redirect()->back()->with('error', 'Application has already been reviewed.');
-        }
-
-        $application->reject(Auth::id(), $request->rejection_reason);
-
-        return redirect()->route('admin.editor-applications.index')
-            ->with('success', 'Application rejected successfully.');
-    }
-
-    /**
-     * Get user's application status
-     */
-    public function status()
-    {
-        $application = EditorApplication::byUser(Auth::id())
-            ->with('reviewer')
-            ->latest()
-            ->first();
-
-        return Inertia::render('Viewer/EditorApplication/Status', [
+        return Inertia::render('application-management/ApplicationDetail', [
             'application' => $application
         ]);
     }
 
     /**
-     * Get pending applications for admin dashboard
+     * Approve an editor application (Admin only)
      */
-    public function pending()
+    public function approve(EditorApplication $application)
     {
-        // Check permission
-        if (!Auth::user()->can('view-applications')) {
-            abort(403, 'Unauthorized');
+        try {
+            // Check if application is still pending
+            if ($application->status !== 'pending') {
+                return redirect()->back()
+                    ->withErrors(['error' => 'Application already processed']);
+            }
+
+            // Get user and update both role AND email verification
+            $user = $application->user;
+            
+            // Force email verification - Now with correct import
+            DB::table('users')
+                ->where('id', $user->id)
+                ->update(['email_verified_at' => now()]);
+            
+            // Sync roles (replace all roles with editor)
+            $user->syncRoles(['editor']);
+            
+            // Update application status
+            $application->update([
+                'status' => 'approved',
+                'reviewed_at' => now(),
+                'reviewed_by' => Auth::id(),
+            ]);
+
+            return redirect()->back()
+                ->with('message', 'Application approved successfully! User is now a verified editor.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withErrors(['error' => 'Failed to approve application. Please try again.']);
         }
+    }
 
-        $applications = EditorApplication::with(['user'])
-            ->pending()
-            ->recentFirst()
-            ->limit(5)
-            ->get();
+    /**
+     * Reject an editor application (Admin only)
+     */
+    public function reject(EditorApplication $application)
+    {
+        try {
+            // Check if application is still pending
+            if ($application->status !== 'pending') {
+                return redirect()->back()
+                    ->withErrors(['error' => 'Application already processed']);
+            }
 
-        return response()->json($applications);
+            // Update application status
+            $application->update([
+                'status' => 'rejected',
+                'reviewed_at' => now(),
+                'reviewed_by' => Auth::id(),
+            ]);
+
+            return redirect()->back()
+                ->with('message', 'Application rejected successfully.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withErrors(['error' => 'Failed to reject application. Please try again.']);
+        }
     }
 }

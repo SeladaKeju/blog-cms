@@ -154,6 +154,7 @@ export default function AuthenticatedLayout({
                     background: '#fff',
                     borderRight: '1px solid #f0f0f0'
                 }}
+                className="custom-sidebar"
             >
                 <div className="p-4 border-b border-gray-200">
                     <div className="flex items-center gap-3">
@@ -171,6 +172,7 @@ export default function AuthenticatedLayout({
                     mode="inline"
                     style={{ borderRight: 0, marginTop: 16 }}
                     items={getMenuItems()}
+                    className="sidebar-menu"
                 />
             </Sider>
             
@@ -240,6 +242,133 @@ export default function AuthenticatedLayout({
                     {children}
                 </Content>
             </Layout>
+
+            {/* Simple Modern Hover - Garis Kanan Only */}
+            <style jsx global>{`
+                /* Base Menu Item - Clean & Simple */
+                .custom-sidebar .sidebar-menu .ant-menu-item {
+                    @apply relative mx-2 mb-1 transition-all duration-200 ease-out;
+                    border-radius: 8px !important;
+                    height: 44px !important;
+                    line-height: 44px !important;
+                    padding: 0 16px !important;
+                    margin-bottom: 4px !important;
+                    color: #6b7280 !important;
+                    background: transparent !important;
+                    border: none !important;
+                    outline: none !important;
+                }
+
+                /* Hover - Simple Background + Garis Kanan */
+                .custom-sidebar .sidebar-menu .ant-menu-item:hover {
+                    @apply bg-gray-50;
+                    transform: translateX(2px);
+                }
+
+                /* Garis Kanan saat Hover - Smooth Animation */
+                .custom-sidebar .sidebar-menu .ant-menu-item::after {
+                    content: '';
+                    position: absolute;
+                    right: 0;
+                    top: 50%;
+                    transform: translateY(-50%) scaleY(0);
+                    width: 3px;
+                    height: 70%;
+                    background: #1677ff;
+                    border-radius: 2px 0 0 2px;
+                    transition: transform 0.2s ease-out;
+                    transform-origin: center;
+                }
+
+                .custom-sidebar .sidebar-menu .ant-menu-item:hover::after {
+                    transform: translateY(-50%) scaleY(1);
+                }
+
+                /* Active/Selected State */
+                .custom-sidebar .sidebar-menu .ant-menu-item-selected {
+                    @apply bg-blue-50;
+                    color: #1677ff !important;
+                    font-weight: 500 !important;
+                }
+
+                .custom-sidebar .sidebar-menu .ant-menu-item-selected::after {
+                    transform: translateY(-50%) scaleY(1) !important;
+                    background: #1677ff !important;
+                    width: 4px !important;
+                }
+
+                /* Icon Styling */
+                .custom-sidebar .sidebar-menu .ant-menu-item .anticon {
+                    color: #9ca3af !important;
+                    font-size: 16px !important;
+                    transition: color 0.2s ease-out;
+                }
+
+                .custom-sidebar .sidebar-menu .ant-menu-item:hover .anticon {
+                    color: #1677ff !important;
+                }
+
+                .custom-sidebar .sidebar-menu .ant-menu-item-selected .anticon {
+                    color: #1677ff !important;
+                }
+
+                /* Text Styling */
+                .custom-sidebar .sidebar-menu .ant-menu-item .ant-menu-title-content {
+                    transition: color 0.2s ease-out;
+                }
+
+                .custom-sidebar .sidebar-menu .ant-menu-item:hover .ant-menu-title-content {
+                    color: #1677ff !important;
+                }
+
+                .custom-sidebar .sidebar-menu .ant-menu-item-selected .ant-menu-title-content {
+                    color: #1677ff !important;
+                }
+
+                /* Collapsed State */
+                .custom-sidebar.ant-layout-sider-collapsed .sidebar-menu .ant-menu-item {
+                    @apply justify-center;
+                    padding: 0 !important;
+                }
+
+                /* Focus State - Remove Outline */
+                .custom-sidebar .sidebar-menu .ant-menu-item:focus {
+                    outline: none !important;
+                    box-shadow: none !important;
+                }
+
+                .custom-sidebar .sidebar-menu .ant-menu-item:focus-visible {
+                    @apply bg-gray-50;
+                }
+
+                .custom-sidebar .sidebar-menu .ant-menu-item:focus-visible::after {
+                    transform: translateY(-50%) scaleY(1);
+                }
+
+                /* Remove Default Ant Design Styles */
+                .custom-sidebar .sidebar-menu .ant-menu-item:active {
+                    background: transparent !important;
+                }
+
+                .custom-sidebar .sidebar-menu .ant-menu-item-selected:hover {
+                    @apply bg-blue-50;
+                }
+
+                /* Clean up any default borders/outlines */
+                .custom-sidebar .sidebar-menu {
+                    border-right: none !important;
+                }
+
+                .custom-sidebar .sidebar-menu .ant-menu-item,
+                .custom-sidebar .sidebar-menu .ant-menu-item:hover,
+                .custom-sidebar .sidebar-menu .ant-menu-item:focus,
+                .custom-sidebar .sidebar-menu .ant-menu-item:active,
+                .custom-sidebar .sidebar-menu .ant-menu-item-selected {
+                    border: none !important;
+                    outline: none !important;
+                    box-shadow: none !important;
+                }
+            `}</style>
         </Layout>
     );
 }

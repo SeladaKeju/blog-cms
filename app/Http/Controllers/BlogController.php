@@ -14,7 +14,7 @@ class BlogController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Post::where('status', 'published')->whereNotNull('published_at');
+            $query = Post::with('author')->where('status', 'published')->whereNotNull('published_at');
 
             // Search functionality
             if ($request->filled('search')) {
@@ -45,6 +45,7 @@ class BlogController extends Controller
                     'published_date' => $post->published_at->format('F j, Y'),
                     'published_at' => $post->published_at->format('Y-m-d H:i:s'),
                     'reading_time' => $this->calculateReadingTime($post->content),
+                    'author' => $post->author ? $post->author->name : 'Unknown',
                 ];
             });
 
@@ -64,21 +65,33 @@ class BlogController extends Controller
                     ];
                 });
 
-            return Inertia::render('Blog/Index', [
+            return Inertia::render('blog/Index', [
                 'posts' => $posts,
                 'recentPosts' => $recentPosts,
                 'filters' => [
                     'search' => $request->get('search', ''),
                     'category' => $request->get('category', ''),
+                ],
+                'auth' => [
+                    'user' => auth()->user(),
+                    'userRole' => auth()->user()?->getRoleNames()->first(),
+                    'canBookmark' => auth()->check(),
+                    'canApplyEditor' => auth()->check(),
                 ]
             ]);
 
         } catch (\Exception $e) {
-            return Inertia::render('Blog/Index', [
-                'posts' => [],
-                'recentPosts' => [],
+            return Inertia::render('blog/Index', [
+                'posts' => collect(),
+                'recentPosts' => collect(),
                 'filters' => ['search' => '', 'category' => ''],
-                'error' => $e->getMessage()
+                'auth' => [
+                    'user' => null,
+                    'userRole' => null,
+                    'canBookmark' => false,
+                    'canApplyEditor' => false,
+                ],
+                'error' => 'Failed to load blog posts'
             ]);
         }
     }
@@ -89,7 +102,8 @@ class BlogController extends Controller
     public function show($slug)
     {
         try {
-            $post = Post::where('slug', $slug)
+            $post = Post::with('author')
+                ->where('slug', $slug)
                 ->where('status', 'published')
                 ->whereNotNull('published_at')
                 ->firstOrFail();
@@ -112,7 +126,7 @@ class BlogController extends Controller
                     ];
                 });
 
-            return Inertia::render('Blog/Show', [
+            return Inertia::render('blog/Show', [
                 'post' => [
                     'id' => $post->id,
                     'title' => $post->title,
@@ -123,8 +137,15 @@ class BlogController extends Controller
                     'published_date' => $post->published_at->format('F j, Y'),
                     'published_at' => $post->published_at->format('Y-m-d H:i:s'),
                     'reading_time' => $this->calculateReadingTime($post->content),
+                    'author' => $post->author ? $post->author->name : 'Unknown',
                 ],
                 'relatedPosts' => $relatedPosts,
+                'auth' => [
+                    'user' => auth()->user(),
+                    'userRole' => auth()->user()?->getRoleNames()->first(),
+                    'canBookmark' => auth()->check(),
+                    'canApplyEditor' => auth()->check(),
+                ]
             ]);
 
         } catch (\Exception $e) {
