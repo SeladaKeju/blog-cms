@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PostController;
+use App\Http\Controllers\PostsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\EditorApplicationController;
@@ -47,7 +47,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Editor and Admin routes
     Route::middleware(['role:editor|admin'])->group(function () {
-        Route::resource('posts', PostController::class);
+        Route::resource('posts', PostsController::class);
     });
 });
 

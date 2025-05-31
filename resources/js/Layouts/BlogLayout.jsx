@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Layout, Menu, Button, Space, Dropdown, message, Avatar } from 'antd';
+import { Layout, Menu, Button, Space, Dropdown, message, Avatar, Input } from 'antd';
 import { Link, router, usePage } from '@inertiajs/react';
 import { 
     HomeOutlined, 
@@ -10,10 +10,12 @@ import {
     MenuOutlined,
     SettingOutlined,
     HeartOutlined,
-    EditOutlined
+    EditOutlined,
+    SearchOutlined
 } from '@ant-design/icons';
 
 const { Header, Content, Footer } = Layout;
+const { Search } = Input;
 
 export default function BlogLayout({ children }) {
     const { props } = usePage();
@@ -31,48 +33,63 @@ export default function BlogLayout({ children }) {
         });
     };
 
-    // Handle editor application - Navigate to page
-    const handleEditorApplicationClick = () => {
+    // Handle search
+    const handleSearch = (value) => {
+        if (value.trim()) {
+            router.get('/blog', { search: value }, { preserveState: true });
+        } else {
+            router.get('/blog', {}, { preserveState: true });
+        }
+    };
+
+    // Handle write button click - Fixed for editor
+    const handleWriteClick = () => {
         if (!auth?.user) {
-            message.info('Please login to apply as editor');
+            message.info('Please login to start writing');
             return;
         }
         
-        // Check if user is already editor or admin
+        // If user is editor or admin, go directly to dashboard
         if (auth.userRole === 'editor' || auth.userRole === 'admin') {
-            message.info('You already have editor privileges');
+            router.visit(route('dashboard')); // Use router.visit instead of window.location
             return;
         }
 
-        // Navigate to application page
-        router.get(route('editor-application.create'));
+        // If user is viewer, go to application form
+        if (auth.userRole === 'viewer') {
+            router.visit(route('editor-application.create'));
+            return;
+        }
+
+        message.info('You need to be a viewer to apply as editor');
     };
 
-    // User dropdown menu items for authenticated users
+    // User dropdown menu items
     const userMenuItems = [
         {
             key: 'profile',
             icon: <SettingOutlined />,
-            label: 'Edit Profile',
-            onClick: () => router.get(route('profile.edit'))
+            label: 'Settings',
+            onClick: () => router.visit(route('profile.edit'))
         },
-        ...(auth?.canBookmark ? [{
+        {
             key: 'bookmarks',
             icon: <HeartOutlined />,
-            label: 'My Bookmarks',
-            onClick: () => message.info('Bookmarks page will be implemented')
-        }] : []),
-        ...(auth?.canApplyEditor && auth?.userRole === 'viewer' ? [{
+            label: 'Your library',
+            onClick: () => router.visit(route('profile.bookmarks'))
+        },
+        // Show different menu item based on role
+        ...(auth?.userRole === 'viewer' ? [{
             key: 'apply-editor',
             icon: <EditOutlined />,
-            label: 'Apply as Editor',
-            onClick: handleEditorApplicationClick
+            label: 'Apply to Write',
+            onClick: () => router.visit(route('editor-application.create'))
         }] : []),
         ...(auth?.userRole === 'admin' || auth?.userRole === 'editor' ? [{
             key: 'dashboard',
             icon: <DashboardOutlined />,
             label: 'Dashboard',
-            onClick: () => router.get(route('dashboard'))
+            onClick: () => router.visit(route('dashboard'))
         }] : []),
         {
             type: 'divider'
@@ -80,143 +97,160 @@ export default function BlogLayout({ children }) {
         {
             key: 'logout',
             icon: <LogoutOutlined />,
-            label: 'Logout',
-            onClick: handleLogout,
-            danger: true
-        }
-    ];
-
-    // Guest dropdown menu items
-    const guestMenuItems = [
-        {
-            key: 'login',
-            icon: <LoginOutlined />,
-            label: 'Login',
-            onClick: () => router.get(route('login'))
-        }
-    ];
-
-    // Main menu items
-    const menuItems = [
-        {
-            key: 'blog',
-            icon: <HomeOutlined />,
-            label: <Link href="/blog">Blog</Link>
+            label: 'Sign out',
+            onClick: handleLogout
         }
     ];
 
     return (
-        <Layout className="min-h-screen bg-gray-50">
-            <Header className="bg-white shadow-sm border-b border-gray-200 px-4 lg:px-8">
-                <div className="flex justify-between items-center h-full max-w-7xl mx-auto">
-                    {/* Logo */}
-                    <div className="flex items-center">
-                        <Link href="/blog" className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-sm">B</span>
-                            </div>
-                            <span className="text-xl font-bold text-gray-900 hidden sm:block">
-                                Blog CMS
-                            </span>
-                        </Link>
-                    </div>
-
-                    {/* Desktop Navigation */}
-                    <div className="hidden lg:flex items-center space-x-6">
-                        <Menu
-                            mode="horizontal"
-                            items={menuItems}
-                            className="border-none bg-transparent"
-                            style={{ lineHeight: '64px' }}
-                        />
-
-                        {/* User Profile Dropdown - Always visible */}
-                        <Dropdown
-                            menu={{ 
-                                items: auth?.user ? userMenuItems : guestMenuItems 
-                            }}
-                            placement="bottomRight"
-                            trigger={['click']}
-                        >
-                            <Button 
-                                type="text"
-                                className="flex items-center space-x-2 h-10 px-3 hover:bg-gray-50 rounded-lg"
-                            >
-                                <Avatar 
-                                    size="small" 
-                                    icon={<UserOutlined />}
-                                    className="bg-blue-600"
-                                />
-                                <span className="text-gray-700 font-medium">
-                                    {auth?.user ? auth.user.name : 'Guest'}
+        <Layout className="min-h-screen bg-white">
+            {/* Medium-style Header */}
+            <Header 
+                className="bg-white border-b border-gray-200 px-0" 
+                style={{ 
+                    height: '57px',
+                    lineHeight: 'normal',
+                    display: 'flex',
+                    alignItems: 'center'
+                }}
+            >
+                <div className="max-w-6xl mx-auto px-6 w-full">
+                    <div className="flex justify-between items-center h-full">
+                        {/* Left Side - Logo and Search */}
+                        <div className="flex items-center gap-8">
+                            <Link href="/blog" className="flex items-center">
+                                <span className="text-2xl font-bold text-gray-900 tracking-tight">
+                                    Blog
                                 </span>
-                            </Button>
-                        </Dropdown>
-                    </div>
+                            </Link>
+                            
+                            {/* Search Bar */}
+                            <div className="hidden md:flex items-center">
+                                <Search
+                                    placeholder="Search"
+                                    allowClear
+                                    onSearch={handleSearch}
+                                    style={{ 
+                                        width: 240,
+                                        verticalAlign: 'middle'
+                                    }}
+                                    size="middle"
+                                />
+                            </div>
+                        </div>
 
-                    {/* Mobile Menu Button */}
-                    <div className="lg:hidden">
-                        <Dropdown
-                            menu={{
-                                items: [
-                                    ...menuItems,
-                                    { type: 'divider' },
-                                    ...(auth?.user ? userMenuItems : guestMenuItems)
-                                ]
-                            }}
-                            trigger={['click']}
-                            placement="bottomRight"
-                        >
-                            <Button icon={<MenuOutlined />} />
-                        </Dropdown>
+                        {/* Right Side Navigation */}
+                        <div className="flex items-center gap-6">
+                            {/* Write Button - Single unified button */}
+                            {auth?.user && (
+                                <Button 
+                                    type="text" 
+                                    icon={<EditOutlined />}
+                                    onClick={handleWriteClick}
+                                    className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                                    style={{ 
+                                        height: 'auto',
+                                        padding: '4px 8px',
+                                        verticalAlign: 'middle'
+                                    }}
+                                >
+                                    Write
+                                </Button>
+                            )}
+
+                            {/* User Profile or Sign In */}
+                            <div className="flex items-center">
+                                {auth?.user ? (
+                                    <Dropdown
+                                        menu={{ items: userMenuItems }}
+                                        placement="bottomRight"
+                                        trigger={['click']}
+                                    >
+                                        <Avatar 
+                                            size={32}
+                                            icon={<UserOutlined />}
+                                            className="bg-blue-600 cursor-pointer"
+                                            style={{ border: '1px solid #e5e7eb' }}
+                                        />
+                                    </Dropdown>
+                                ) : (
+                                    <div className="flex items-center gap-4">
+                                        <Link href={route('login')}>
+                                            <Button 
+                                                type="text"
+                                                className="text-gray-600 hover:text-gray-900"
+                                                style={{ 
+                                                    height: 'auto',
+                                                    padding: '4px 8px',
+                                                    verticalAlign: 'middle'
+                                                }}
+                                            >
+                                                Sign in
+                                            </Button>
+                                        </Link>
+                                        <Link href={route('register')}>
+                                            <Button 
+                                                type="primary"
+                                                className="bg-green-600 hover:bg-green-700 border-green-600 hover:border-green-700 rounded-full px-4"
+                                                style={{ 
+                                                    height: 'auto',
+                                                    padding: '6px 16px',
+                                                    verticalAlign: 'middle'
+                                                }}
+                                            >
+                                                Get started
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </Header>
 
-            <Content className="flex-1">
-                <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
-                    {children}
-                </div>
+            {/* Main Content */}
+            <Content className="flex-1 bg-white">
+                {children}
             </Content>
 
-            <Footer className="bg-gray-800 text-gray-300">
-                <div className="max-w-7xl mx-auto px-4 lg:px-8">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-8">
+            {/* Footer */}
+            <Footer className="bg-gray-50 border-t border-gray-200 py-12">
+                <div className="max-w-6xl mx-auto px-6">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
                         <div>
-                            <h3 className="text-lg font-semibold text-white mb-4">Blog CMS</h3>
-                            <p className="text-gray-400">
-                                A modern content management system for bloggers and content creators.
-                            </p>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold text-white mb-4">Quick Links</h4>
-                            <ul className="space-y-2">
-                                <li>
-                                    <Link href="/blog" className="text-gray-400 hover:text-white transition-colors">
-                                        Blog
-                                    </Link>
-                                </li>
-                                {!auth?.user && (
-                                    <li>
-                                        <Link href={route('login')} className="text-gray-400 hover:text-white transition-colors">
-                                            Login
-                                        </Link>
-                                    </li>
-                                )}
+                            <h4 className="font-medium text-gray-900 mb-3">Help</h4>
+                            <ul className="space-y-2 text-sm text-gray-600">
+                                <li><a href="#" className="hover:text-gray-900">Help Center</a></li>
+                                <li><a href="#" className="hover:text-gray-900">Contact us</a></li>
                             </ul>
                         </div>
                         <div>
-                            <h4 className="font-semibold text-white mb-4">Features</h4>
-                            <ul className="space-y-2 text-gray-400">
-                                <li>Rich Content Editor</li>
-                                <li>SEO Optimization</li>
-                                <li>User Management</li>
-                                <li>Role-based Access</li>
+                            <h4 className="font-medium text-gray-900 mb-3">About</h4>
+                            <ul className="space-y-2 text-sm text-gray-600">
+                                <li><a href="#" className="hover:text-gray-900">About us</a></li>
+                                <li><a href="#" className="hover:text-gray-900">Blog</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-medium text-gray-900 mb-3">Legal</h4>
+                            <ul className="space-y-2 text-sm text-gray-600">
+                                <li><a href="#" className="hover:text-gray-900">Terms</a></li>
+                                <li><a href="#" className="hover:text-gray-900">Privacy</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-medium text-gray-900 mb-3">Connect</h4>
+                            <ul className="space-y-2 text-sm text-gray-600">
+                                <li><a href="#" className="hover:text-gray-900">Twitter</a></li>
+                                <li><a href="#" className="hover:text-gray-900">LinkedIn</a></li>
                             </ul>
                         </div>
                     </div>
-                    <div className="border-t border-gray-700 pt-4 text-center text-gray-400">
-                        <p>&copy; 2024 Blog CMS. All rights reserved.</p>
+                    <div className="mt-8 pt-8 border-t border-gray-200 text-center">
+                        <p className="text-sm text-gray-500">
+                            © 2024 Blog CMS. All rights reserved.
+                        </p>
                     </div>
                 </div>
             </Footer>
