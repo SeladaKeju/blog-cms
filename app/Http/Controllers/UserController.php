@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Support\Facades\Schema;
 
 class UserController extends Controller
 {
@@ -73,109 +72,177 @@ class UserController extends Controller
      */
     public function dashboard()
     {
-        $user = auth()->user();
+        $user = Auth::user();
         
-        // Redirect viewer ke blog (mereka tidak punya dashboard)
-        if ($user->hasRole('viewer')) {
-            return redirect('/blog')->with('message', 'Welcome! Enjoy reading our articles.');
-        }
-        
-        // Pastikan user punya role admin/editor
-        if (!$user->hasAnyRole(['admin', 'editor'])) {
-            // Jika bukan admin/editor, assign viewer dan redirect ke blog
-            $user->assignRole('viewer');
-            return redirect('/blog')->with('message', 'Welcome! You can now browse and bookmark articles.');
-        }
-        
-        // Get data berdasarkan role
-        $dashboardData = $this->getDashboardData($user);
-        
-        return Inertia::render('Dashboard/index', $dashboardData);
-    }
-
-    private function getDashboardData($user)
-    {
-        $baseData = [
-            'user' => $user->load('roles'),
-            'userRole' => $user->getRoleNames()->first() ?? 'viewer',
-            'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
-        ];
-
-        // Data berdasarkan role (hanya admin dan editor)
-        switch (true) {
-            case $user->hasRole('admin'):
-                return array_merge($baseData, $this->getAdminData());
-            
-            case $user->hasRole('editor'):
-                return array_merge($baseData, $this->getEditorData($user));
-            
-            default:
-                // Fallback - seharusnya tidak sampai sini karena viewer sudah redirect
+        try {
+            if ($user->hasRole('admin')) {
+                $data = $this->getAdminData();
+                return Inertia::render('Dashboard/index', array_merge($data, ['userRole' => 'admin']));
+            } elseif ($user->hasRole('editor')) {
+                $data = $this->getEditorData();
+                return Inertia::render('Dashboard/index', array_merge($data, ['userRole' => 'editor']));
+            } else {
+                // Redirect viewers to blog
                 return redirect('/blog');
+            }
+        } catch (\Exception $e) {
+            return redirect('/blog')->withErrors(['error' => 'Unable to load dashboard']);
         }
     }
 
     private function getAdminData()
     {
         return [
-            'totalUsers' => User::count(),
-            'totalPosts' => Post::count(),
-            'pendingApplications' => EditorApplication::where('status', 'pending')->count(),
-            'recentUsers' => User::latest()->take(5)->get(),
+            'stats' => [
+                'totalUsers' => User::count(),
+                'totalPosts' => Post::count(),
+                'pendingApplications' => EditorApplication::where('status', 'pending')->count(),
+                'activeEditors' => User::role('editor')->count(),
+            ],
+            'recentUsers' => User::latest()->take(5)->get()->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->getRoleNames()->first() ?? 'viewer',
+                    'verified' => $user->email_verified_at !== null,
+                    'created_at' => $user->created_at->format('Y-m-d H:i:s'),
+                ];
+            }),
             'recentPosts' => Post::with('author')->latest()->take(5)->get(),
+            'recentApplications' => EditorApplication::with('user')
+                ->where('status', 'pending')
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(function ($app) {
+                    return [
+                        'id' => $app->id,
+                        'user' => [
+                            'id' => $app->user->id,
+                            'name' => $app->user->name,
+                            'email' => $app->user->email,
+                        ],
+                        'status' => $app->status,
+                        'created_at' => $app->created_at->format('Y-m-d H:i:s'),
+                        'motivation' => substr($app->motivation, 0, 100) . '...',
+                    ];
+                }),
+            'pendingPosts' => Post::where('status', 'draft')
+                ->with('author')
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(function ($post) {
+                    return [
+                        'id' => $post->id,
+                        'title' => $post->title,
+                        'status' => $post->status,
+                        'author' => [
+                            'name' => $post->author->name ?? 'Unknown'
+                        ],
+                        'created_at' => $post->created_at->format('Y-m-d H:i:s'),
+                    ];
+                }),
         ];
     }
 
-    private function getEditorData($user)
+    private function getEditorData()
     {
+        $user = Auth::user();
+        
         return [
-            'myPosts' => Post::where('author_id', $user->id)->count(),
-            'draftPosts' => Post::where('author_id', $user->id)->where('status', 'draft')->count(),
-            'publishedPosts' => Post::where('author_id', $user->id)->where('status', 'published')->count(),
-            'recentPosts' => Post::where('author_id', $user->id)->latest()->take(5)->get(),
+            'stats' => [
+                'myPosts' => Post::where('author_id', $user->id)->count(),
+                'publishedPosts' => Post::where('author_id', $user->id)->where('status', 'published')->count(),
+                'draftPosts' => Post::where('author_id', $user->id)->where('status', 'draft')->count(),
+                'totalViews' => 0,
+            ],
+            'recentPosts' => Post::where('author_id', $user->id)
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(function ($post) {
+                    return [
+                        'id' => $post->id,
+                        'title' => $post->title,
+                        'status' => $post->status,
+                        'created_at' => $post->created_at->format('Y-m-d H:i:s'),
+                    ];
+                }),
+            'pendingPosts' => Post::where('author_id', $user->id)
+                ->where('status', 'draft')
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(function ($post) {
+                    return [
+                        'id' => $post->id,
+                        'title' => $post->title,
+                        'status' => $post->status,
+                        'created_at' => $post->created_at->format('Y-m-d H:i:s'),
+                    ];
+                }),
         ];
     }
-
-    // ===== USER MANAGEMENT METHODS (ADMIN ONLY) =====
 
     /**
      * Display a listing of users (Admin only)
      */
     public function index(Request $request)
     {
-        // Check permission
-        if (!auth()->user()->can('manage-users')) {
-            abort(403, 'Unauthorized');
+        // Check if user is admin
+        if (!auth()->user()->hasRole('admin')) {
+            return redirect('/dashboard')->with('error', 'Access denied');
         }
 
-        // Query builder
         $query = User::with('roles');
 
         // Search functionality
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('email', 'LIKE', "%{$searchTerm}%");
             });
         }
 
-        // Role filter
+        // Filter by role
         if ($request->filled('role')) {
-            $query->role($request->role);
+            $query->whereHas('roles', function ($q) use ($request) {
+                $q->where('name', $request->role);
+            });
         }
 
-        // Pagination
-        $users = $query->latest()->paginate(
-            $request->get('per_page', 15)
-        );
+        $users = $query->orderBy('created_at', 'desc')
+            ->paginate(15)
+            ->through(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'email_verified_at' => $user->email_verified_at, // ADD THIS LINE
+                    'created_at' => $user->created_at,
+                    'roles' => $user->roles,
+                ];
+            })
+            ->withQueryString();
+
+        // Get role statistics
+        $stats = [
+            'total' => User::count(),
+            'admins' => User::role('admin')->count(),
+            'editors' => User::role('editor')->count(),
+            'viewers' => User::role('viewer')->count(),
+        ];
 
         return Inertia::render('user-management/UserManager', [
             'users' => $users,
             'filters' => [
                 'search' => $request->search,
                 'role' => $request->role,
-            ]
+            ],
+            'stats' => $stats
         ]);
     }
 
@@ -184,9 +251,9 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        // Check permission
-        if (!auth()->user()->can('manage-users')) {
-            abort(403, 'Unauthorized');
+        // Check if user is admin
+        if (!auth()->user()->hasRole('admin')) {
+            return back()->with('error', 'Access denied');
         }
 
         // Validate request
@@ -197,122 +264,81 @@ class UserController extends Controller
             'role' => 'required|string|in:admin,editor,viewer',
         ]);
 
-        // Create user
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'email_verified_at' => now(),
-        ]);
+        try {
+            // Create user
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'email_verified_at' => now(), // Auto verify
+            ]);
 
-        // Assign role
-        $user->assignRole($validated['role']);
+            // Assign role
+            $user->assignRole($validated['role']);
 
-        return redirect()->route('admin.users.index')
-            ->with('success', 'User created successfully!');
-    }
+            return back()->with('message', 'User created successfully!');
 
-    /**
-     * Display the specified user
-     */
-    public function show(User $user)
-    {
-        // Check permission
-        if (!auth()->user()->can('manage-users')) {
-            abort(403, 'Unauthorized');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to create user: ' . $e->getMessage());
         }
-
-        // Load relationships
-        $user->load([
-            'roles', 
-            'posts' => function ($query) {
-                $query->latest()->limit(10);
-            },
-            'editorApplications' => function ($query) {
-                $query->latest()->limit(5);
-            },
-            'bookmarks.post' => function ($query) {
-                $query->latest()->limit(10);
-            }
-        ]);
-
-        return Inertia::render('UserManagement/UserProfile', [
-            'user' => $user
-        ]);
     }
 
     /**
-     * Update the specified user
+     * Update user (match route name: updateUser)
      */
     public function updateUser(Request $request, User $user)
     {
-        // Check permission
-        if (!auth()->user()->can('manage-users')) {
-            abort(403, 'Unauthorized');
+        // Check if user is admin
+        if (!auth()->user()->hasRole('admin')) {
+            return back()->with('error', 'Access denied');
         }
 
-        // Validate request
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => [
-                'required', 
-                'string', 
-                'email', 
-                'max:255', 
-                Rule::unique('users')->ignore($user->id)
-            ],
-            'role' => 'required|string|in:admin,editor,viewer',
-            'password' => 'nullable|string|min:8|confirmed',
-            'change_password' => 'boolean',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'role' => 'required|string|in:admin,editor,viewer'
         ]);
 
-        // Prepare update data
-        $updateData = [
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-        ];
+        try {
+            // Update user basic info
+            $user->update([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'email_verified_at' => now(), // Ensure user is verified
+            ]);
 
-        // Update password if provided
-        if ($request->filled('password') && $request->change_password) {
-            $updateData['password'] = Hash::make($validated['password']);
+            // Update role - SYNC to replace all roles
+            $user->syncRoles([$validated['role']]);
+
+            return back()->with('message', 'User updated successfully!');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to update user: ' . $e->getMessage());
         }
-
-        // Update user
-        $user->update($updateData);
-
-        // Update role
-        $user->syncRoles([$validated['role']]);
-
-        return redirect()->route('admin.users.index')
-            ->with('success', 'User updated successfully!');
     }
 
     /**
-     * Remove the specified user
+     * Delete user (match route name: destroyUser)
      */
     public function destroyUser(User $user)
     {
-        // Check permission
-        if (!auth()->user()->can('manage-users')) {
-            abort(403, 'Unauthorized');
+        // Check if user is admin
+        if (!auth()->user()->hasRole('admin')) {
+            return back()->with('error', 'Access denied');
         }
 
-        // Prevent deleting own account
-        if ($user->id === auth()->id()) {
-            return redirect()->back()
-                ->with('error', 'You cannot delete your own account.');
+        try {
+            // Don't allow admin to delete themselves
+            if ($user->id === auth()->id()) {
+                return back()->with('error', 'You cannot delete your own account');
+            }
+
+            $user->delete();
+
+            return back()->with('message', 'User deleted successfully');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to delete user');
         }
-
-        // Prevent deleting if user has content
-        if ($user->posts()->count() > 0) {
-            return redirect()->back()
-                ->with('error', 'Cannot delete user with existing posts. Please reassign or delete posts first.');
-        }
-
-        // Delete user
-        $user->delete();
-
-        return redirect()->route('admin.users.index')
-            ->with('success', 'User deleted successfully!');
     }
 }

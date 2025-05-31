@@ -31,13 +31,21 @@ export default function BlogLayout({ children }) {
         });
     };
 
-    // Handle editor application
+    // Handle editor application - Navigate to page
     const handleEditorApplicationClick = () => {
         if (!auth?.user) {
             message.info('Please login to apply as editor');
             return;
         }
-        message.success('Editor application feature will be implemented');
+        
+        // Check if user is already editor or admin
+        if (auth.userRole === 'editor' || auth.userRole === 'admin') {
+            message.info('You already have editor privileges');
+            return;
+        }
+
+        // Navigate to application page
+        router.get(route('editor-application.create'));
     };
 
     // User dropdown menu items for authenticated users

@@ -19,14 +19,12 @@ import {
 import { 
     EyeOutlined, 
     CheckOutlined, 
-    CloseOutlined,
     SearchOutlined,
     UserOutlined,
     ClockCircleOutlined,
-    FileTextOutlined
+    CloseOutlined
 } from '@ant-design/icons';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import ApplicationForm from './ApplicationForm';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -34,16 +32,13 @@ const { confirm } = Modal;
 const { Title, Text } = Typography;
 
 export default function ApplicationList({ applications, filters = {}, stats = {} }) {
-    // States
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || '');
     const [loading, setLoading] = useState(false);
-    const [isReviewOpen, setIsReviewOpen] = useState(false);
-    const [reviewingApplication, setReviewingApplication] = useState(null);
 
     // Handle search
     const handleSearch = (value) => {
-        router.get(route('editor-applications.index'), {
+        router.get(route('admin.editor-applications.index'), {
             search: value,
             status: statusFilter
         }, {
@@ -55,7 +50,7 @@ export default function ApplicationList({ applications, filters = {}, stats = {}
     // Handle status filter
     const handleStatusFilter = (value) => {
         setStatusFilter(value);
-        router.get(route('editor-applications.index'), {
+        router.get(route('admin.editor-applications.index'), {
             search: searchTerm,
             status: value
         }, {
@@ -64,73 +59,35 @@ export default function ApplicationList({ applications, filters = {}, stats = {}
         });
     };
 
-    // Open Review Modal
-    const openReviewModal = (application) => {
-        setReviewingApplication(application);
-        setIsReviewOpen(true);
-    };
-
-    // Quick approve
-    const handleQuickApprove = (application) => {
+    // Regular approve with confirmation
+    const handleApprove = (application) => {
         confirm({
-            title: `Approve Application from ${application.user?.name}?`,
-            content: 'This will grant editor permissions to the user.',
+            title: 'Approve Application',
+            content: (
+                <div>
+                    <p>Approve <strong>{application.user?.name}</strong> as editor?</p>
+                    <p className="text-sm text-gray-600">
+                        User will get editor access and email verification.
+                    </p>
+                </div>
+            ),
             okText: 'Yes, Approve',
             okType: 'primary',
             cancelText: 'Cancel',
             onOk() {
                 setLoading(true);
-                router.post(route('editor-applications.approve', application.id), {}, {
+                router.post(route('admin.editor-applications.approve', application.id), {}, {
                     onSuccess: () => {
-                        message.success('Application approved successfully!');
+                        message.success(`${application.user.name} is now an editor!`);
                         setLoading(false);
                     },
                     onError: () => {
-                        message.error('Failed to approve application.');
+                        message.error('Failed to approve application');
                         setLoading(false);
                     }
                 });
             }
         });
-    };
-
-    // Quick reject
-    const handleQuickReject = (application) => {
-        confirm({
-            title: `Reject Application from ${application.user?.name}?`,
-            content: 'This action will deny the editor application.',
-            okText: 'Yes, Reject',
-            okType: 'danger',
-            cancelText: 'Cancel',
-            onOk() {
-                setLoading(true);
-                router.post(route('editor-applications.reject', application.id), {
-                    rejection_reason: 'Quick rejection'
-                }, {
-                    onSuccess: () => {
-                        message.success('Application rejected.');
-                        setLoading(false);
-                    },
-                    onError: () => {
-                        message.error('Failed to reject application.');
-                        setLoading(false);
-                    }
-                });
-            }
-        });
-    };
-
-    // Handle review close
-    const handleReviewClose = () => {
-        setIsReviewOpen(false);
-        setReviewingApplication(null);
-    };
-
-    // Handle review success
-    const handleReviewSuccess = (message) => {
-        setIsReviewOpen(false);
-        setReviewingApplication(null);
-        message.success(message);
     };
 
     // Table columns
@@ -209,35 +166,19 @@ export default function ApplicationList({ applications, filters = {}, stats = {}
                         <Button
                             type="text"
                             icon={<EyeOutlined />}
-                            onClick={() => router.get(route('editor-applications.show', record.id))}
+                            onClick={() => router.get(route('admin.editor-applications.show', record.id))}
                         />
                     </Tooltip>
                     {record.status === 'pending' && (
-                        <>
-                            <Tooltip title="Review Application">
-                                <Button
-                                    type="text"
-                                    icon={<FileTextOutlined />}
-                                    onClick={() => openReviewModal(record)}
-                                />
-                            </Tooltip>
-                            <Tooltip title="Quick Approve">
-                                <Button
-                                    type="text"
-                                    icon={<CheckOutlined />}
-                                    onClick={() => handleQuickApprove(record)}
-                                    className="text-green-600 hover:text-green-700"
-                                />
-                            </Tooltip>
-                            <Tooltip title="Quick Reject">
-                                <Button
-                                    type="text"
-                                    icon={<CloseOutlined />}
-                                    onClick={() => handleQuickReject(record)}
-                                    className="text-red-600 hover:text-red-700"
-                                />
-                            </Tooltip>
-                        </>
+                        <Tooltip title="Approve Application">
+                            <Button
+                                type="text"
+                                icon={<CheckOutlined />}
+                                onClick={() => handleApprove(record)}
+                                loading={loading}
+                                className="text-green-600 hover:text-green-700"
+                            />
+                        </Tooltip>
                     )}
                 </Space>
             ),
@@ -314,7 +255,7 @@ export default function ApplicationList({ applications, filters = {}, stats = {}
                             showTotal: (total, range) =>
                                 `${range[0]}-${range[1]} of ${total} applications`,
                             onChange: (page, pageSize) => {
-                                router.get(route('editor-applications.index'), {
+                                router.get(route('admin.editor-applications.index'), {
                                     page,
                                     per_page: pageSize,
                                     search: searchTerm,
@@ -327,14 +268,6 @@ export default function ApplicationList({ applications, filters = {}, stats = {}
                         }}
                     />
                 </Card>
-
-                {/* Review Modal */}
-                <ApplicationForm
-                    open={isReviewOpen}
-                    application={reviewingApplication}
-                    onClose={handleReviewClose}
-                    onSuccess={handleReviewSuccess}
-                />
             </div>
         </AuthenticatedLayout>
     );
