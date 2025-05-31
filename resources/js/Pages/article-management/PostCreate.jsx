@@ -1,9 +1,9 @@
-import { Form, Row } from 'antd';
+import { Form, Row, Col } from 'antd';
 import { Head } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ArticleHeader from '@/Components/ArticleHeader';
 import ArticleEditor from '@/Components/ArticleEditor';
-import ArticleSidebar from '@/Components/ArticleSidebar';
+import ArticleSidebar from '@/Components/ArticleSidebar'; // Keep original for create
 import { useArticleForm } from '@/Hooks/useArticleForm';
 
 export default function PostCreate() {
@@ -49,14 +49,23 @@ export default function PostCreate() {
                             className="article-form"
                         >
                             <Row gutter={[32, 32]} className="flex-wrap">
-                                <ArticleEditor 
-                                    content={content}
-                                    onContentChange={setContent}
-                                />
-                                <ArticleSidebar 
-                                    form={form}
-                                    handleThumbnailChange={(fileList) => handleThumbnailChange(fileList, form)}
-                                />
+                                {/* Main Editor */}
+                                <Col xs={24} lg={16}>
+                                    <ArticleEditor 
+                                        content={content}
+                                        onContentChange={setContent}
+                                    />
+                                </Col>
+
+                                {/* Original Sidebar for Create */}
+                                <Col xs={24} lg={8}>
+                                    <div className="sticky top-4">
+                                        <ArticleSidebar 
+                                            form={form}
+                                            handleThumbnailChange={(fileList) => handleThumbnailChange(fileList, form)}
+                                        />
+                                    </div>
+                                </Col>
                             </Row>
                         </Form>
                     </div>

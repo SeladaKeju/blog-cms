@@ -1,13 +1,19 @@
 import React, { useEffect } from 'react';
 import { Head } from '@inertiajs/react';
-import { Form, Row } from 'antd';
+import { Form, Row, Col } from 'antd';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ArticleHeader from '@/Components/ArticleHeader';
 import ArticleEditor from '@/Components/ArticleEditor';
-import ArticleSidebar from '@/Components/ArticleSidebar';
+import EditSidebar from '@/Components/EditSidebar';
 import { useArticleForm } from '@/Hooks/useArticleForm';
+import { usePage } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
+import dayjs from 'dayjs';
 
 export default function PostEdit({ post }) {
+    const { auth } = usePage().props;
+    const userRole = auth.user?.roles?.[0]?.name || 'viewer';
+    
     const [form] = Form.useForm();
     const {
         loading,
@@ -27,11 +33,36 @@ export default function PostEdit({ post }) {
                 title: post.title,
                 excerpt: post.excerpt,
                 status: post.status,
-                published_at: post.published_at,
+                published_at: post.published_at ? dayjs(post.published_at) : null,
             });
             setContent(post.content || '');
         }
     }, [post, form, setContent]);
+
+    // Handle post status actions
+    const handleSubmitForReview = () => {
+        router.post(`/posts/${post.id}/submit-review`, {}, {
+            onSuccess: () => {
+                router.reload();
+            }
+        });
+    };
+
+    const handleApprove = () => {
+        router.post(`/posts/${post.id}/approve`, {}, {
+            onSuccess: () => {
+                router.reload();
+            }
+        });
+    };
+
+    const handleReject = () => {
+        router.post(`/posts/${post.id}/reject`, {}, {
+            onSuccess: () => {
+                router.reload();
+            }
+        });
+    };
 
     if (!post) {
         return (
@@ -73,7 +104,7 @@ export default function PostEdit({ post }) {
                         onDelete={handleDelete}
                         loading={loading}
                         deleteLoading={deleteLoading}
-                        showDelete={true}
+                        showDelete={userRole === 'admin' || post.author_id === auth.user.id}
                         publishText={post.status !== 'published' ? "Publish" : "Update"}
                         isPublished={post.status === 'published'}
                     />
@@ -89,16 +120,31 @@ export default function PostEdit({ post }) {
                             className="article-form"
                         >
                             <Row gutter={[32, 32]} className="flex-wrap">
-                                <ArticleEditor 
-                                    content={content}
-                                    onContentChange={setContent}
-                                />
-                                <ArticleSidebar 
-                                    form={form}
-                                    handleThumbnailChange={(fileList) => handleThumbnailChange(fileList, form)}
-                                    currentThumbnail={post.thumbnail}
-                                
-                                />
+                                {/* Main Editor - 2/3 width */}
+                                <Col xs={24} lg={16}>
+                                    <ArticleEditor 
+                                        content={content}
+                                        onContentChange={setContent}
+                                        readOnly={userRole === 'viewer'}
+                                    />
+                                </Col>
+
+                                {/* Edit Sidebar - 1/3 width */}
+                                <Col xs={24} lg={8}>
+                                    <div className="sticky top-4">
+                                        <EditSidebar
+                                            form={form}
+                                            post={post}
+                                            userRole={userRole}
+                                            currentThumbnail={post.thumbnail}
+                                            onThumbnailChange={(fileList) => handleThumbnailChange(fileList, form)}
+                                            onSubmitForReview={handleSubmitForReview}
+                                            onApprove={handleApprove}
+                                            onReject={handleReject}
+                                            loading={loading}
+                                        />
+                                    </div>
+                                </Col>
                             </Row>
                         </Form>
                     </div>
@@ -131,47 +177,6 @@ export default function PostEdit({ post }) {
                 .article-form .ant-select-focused .ant-select-selector {
                     border-color: #1677ff;
                     box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
-                }
-                
-                /* Action buttons styling */
-                .article-action-btn {
-                    border-radius: 6px;
-                    height: 36px;
-                    font-weight: 500;
-                    transition: all 0.2s;
-                }
-                
-                .article-action-btn.ant-btn-primary {
-                    background-color: #1677ff;
-                    border: none;
-                    box-shadow: 0 2px 0 rgba(5, 125, 255, 0.1);
-                }
-                
-                .article-action-btn.ant-btn-primary:hover {
-                    background-color: #4096ff;
-                    transform: translateY(-1px);
-                    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
-                }
-                
-                .article-action-btn.ant-btn-default {
-                    border-color: #d9d9d9;
-                }
-                
-                .article-action-btn.ant-btn-default:hover {
-                    border-color: #4096ff;
-                    color: #4096ff;
-                }
-                
-                .article-action-btn.ant-btn-danger {
-                    background-color: #ff4d4f;
-                    border: none;
-                    color: #fff;
-                }
-                
-                .article-action-btn.ant-btn-danger:hover {
-                    background-color: #ff7875;
-                    transform: translateY(-1px);
-                    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
                 }
             `}</style>
         </AuthenticatedLayout>

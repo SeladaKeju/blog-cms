@@ -13,19 +13,41 @@ class EditorApplicationController extends Controller
     /**
      * Display a listing of editor applications (Admin only)
      */
-    public function index()
+    public function index(Request $request) // ✅ ADD Request parameter
     {
         // Check permission
         if (!Auth::user()->can('view-applications')) {
             abort(403, 'Unauthorized');
         }
 
-        $applications = EditorApplication::with(['user', 'reviewer'])
-            ->recentFirst()
-            ->paginate(10);
+        // Query builder
+        $query = EditorApplication::with(['user', 'reviewer']);
 
-        return Inertia::render('Admin/EditorApplications/Index', [
+        // ✅ ADD search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            })->orWhere('motivation', 'like', "%{$search}%");
+        }
+
+        // ✅ ADD status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // ✅ ADD per_page support
+        $applications = $query->recentFirst()->paginate(
+            $request->get('per_page', 10)
+        );
+
+        return Inertia::render('application-management/ApplicationList', [
             'applications' => $applications,
+            'filters' => [ // ✅ ADD filters
+                'search' => $request->search,
+                'status' => $request->status,
+            ],
             'stats' => [
                 'total' => EditorApplication::count(),
                 'pending' => EditorApplication::pending()->count(),
@@ -62,7 +84,7 @@ class EditorApplicationController extends Controller
                 ->with('info', 'You already have an application.');
         }
 
-        return Inertia::render('Viewer/EditorApplication/Create');
+        return Inertia::render('application-management/ApplicationForm');
     }
 
     /**
@@ -115,7 +137,7 @@ class EditorApplicationController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        return Inertia::render('Admin/EditorApplications/Show', [
+        return Inertia::render('application-management/ApplicationView', [
             'application' => $application->load(['user', 'reviewer'])
         ]);
     }

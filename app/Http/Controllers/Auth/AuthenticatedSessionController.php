@@ -33,7 +33,21 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = Auth::user();
+        
+        // Pastikan user punya role, assign viewer jika belum ada
+        if (!$user->hasAnyRole(['admin', 'editor', 'viewer'])) {
+            $user->assignRole('viewer');
+        }
+
+        // Redirect berdasarkan role
+        if ($user->hasRole('admin') || $user->hasRole('editor')) {
+            // Admin dan Editor ke dashboard
+            return redirect()->intended(route('dashboard'));
+        } else {
+            // Viewer langsung ke blog public
+            return redirect()->intended('/blog');
+        }
     }
 
     /**
@@ -47,6 +61,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/blog');
     }
 }
