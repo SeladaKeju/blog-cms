@@ -81,7 +81,7 @@ class UserController extends Controller
                     'total_posts' => \App\Models\Post::count(),
                     'pending_applications' => \App\Models\EditorApplication::where('status', 'pending')->count(),
                 ],
-                'recentPosts' => \App\Models\Post::latest()->take(5)->get(),
+                'recentPosts' => \App\Models\Post::with('author')->latest()->take(5)->get(),
                 'permissions' => ['manage-users', 'manage-posts', 'manage-applications']
             ]);
         } elseif ($user->hasRole('editor')) {

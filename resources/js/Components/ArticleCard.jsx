@@ -18,7 +18,8 @@ export default function ArticleCard({
     imageSize = THUMBNAIL_SIZES.medium, // Default to medium size
     thumbnailSize = 'medium', // Accept a size name (small, medium, large)
     titleSize = { level: 4, fontSize: '18px' },
-    excerptRows = 3 
+    excerptRows = 3,
+    renderCustomTitle = false // Add this prop
 }) {
     
     // Determine the actual image size to use
@@ -148,13 +149,20 @@ export default function ArticleCard({
                 <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
-                            <Title 
-                                level={titleSize.level} 
-                                className="mb-2 text-gray-900"
-                                style={{ margin: 0, fontSize: titleSize.fontSize, fontWeight: '600' }}
-                            >
-                                {article.title}
-                            </Title>
+                            {renderCustomTitle && article.customTitle ? (
+                                // Render custom title with author
+                                article.customTitle
+                            ) : (
+                                // Render default title
+                                <Title 
+                                    level={titleSize.level} 
+                                    className="mb-2 text-gray-900"
+                                    style={{ margin: 0, fontSize: titleSize.fontSize, fontWeight: '600' }}
+                                >
+                                    {article.title}
+                                </Title>
+                            )}
+                            
                             {showStatus && article.status && (
                                 <div className="flex items-center gap-3 mt-2">
                                     <div

@@ -14,6 +14,7 @@ import {
     BellOutlined,
     CloseCircleOutlined
 } from '@ant-design/icons';
+import ArticleCard from '@/Components/ArticleCard'; // Import ArticleCard component
 
 const { Title, Text } = Typography;
 
@@ -74,6 +75,15 @@ export default function AdminDashboard({
                 });
             }
         });
+    };
+
+    // Handle article click to navigate to edit page
+    const handleArticleClick = (article) => {
+        // Navigate to the public article URL instead of the edit page
+        if (article.slug) {
+            // Open in new tab to maintain admin session
+            window.open(`/blog/${article.slug}`, '_blank');
+        }
     };
 
     // Pending applications table columns
@@ -320,7 +330,7 @@ export default function AdminDashboard({
                         </Col>
                     </Row>
 
-                    {/* Recent Posts */}
+                    {/* Recent Posts - with author name opposite to title */}
                     <Card 
                         title="Recent Posts"
                         extra={
@@ -332,20 +342,41 @@ export default function AdminDashboard({
                                 View All
                             </Button>
                         }
+                        bodyStyle={{ padding: '16px' }}
                     >
                         {recentPosts && recentPosts.length > 0 ? (
-                            <div className="space-y-3">
+                            <div className="space-y-6">
                                 {recentPosts.slice(0, 5).map((post) => (
-                                    <div key={post.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                                        <div>
-                                            <div className="font-medium">{post.title}</div>
-                                            <div className="text-sm text-gray-500">
-                                                By {post.author?.name || 'Unknown'} • {new Date(post.created_at).toLocaleDateString()}
-                                            </div>
-                                        </div>
-                                        <Tag color={post.status === 'published' ? 'green' : 'orange'}>
-                                            {post.status}
-                                        </Tag>
+                                    <div key={post.id} className="article-with-author">
+                                        <ArticleCard
+                                            article={{
+                                                ...post,
+                                                excerpt: post.excerpt || 'No excerpt available for this post.',
+                                                // Add custom render prop for title section
+                                                customTitle: (
+                                                    <div className="flex items-center justify-between w-full">
+                                                        <Title 
+                                                            level={4} 
+                                                            className="mb-2 text-gray-900"
+                                                            style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}
+                                                        >
+                                                            {post.title}
+                                                        </Title>
+                                                        <Text className="text-sm text-gray-500">
+                                                            By <span className="font-medium text-gray-700">
+                                                                {post.author ? post.author.name : 'Unknown'}
+                                                            </span>
+                                                        </Text>
+                                                    </div>
+                                                )
+                                            }}
+                                            onClick={() => handleArticleClick(post)}
+                                            showStatus={true}
+                                            thumbnailSize="medium"
+                                            titleSize={{ level: 4, fontSize: '20px' }}
+                                            excerptRows={3}
+                                            renderCustomTitle={true}
+                                        />
                                     </div>
                                 ))}
                             </div>
