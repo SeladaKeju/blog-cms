@@ -67,8 +67,12 @@ export default function PostEdit({ post }) {
     if (!post) {
         return (
             <AuthenticatedLayout
-                title="Error" 
-                subtitle="The requested post could not be found"
+                title={
+                    <div className="flex flex-col space-y-1 py-1">
+                        <h1 className="text-xl font-semibold text-gray-900 m-0">Error</h1>
+                        <p className="text-sm text-gray-500 m-0">The requested post could not be found</p>
+                    </div>
+                }
             >
                 <Head title="Error" />
                 <div className="py-12">
@@ -87,8 +91,12 @@ export default function PostEdit({ post }) {
 
     return (
         <AuthenticatedLayout
-            title={`Edit: ${post.title}`}
-            subtitle={`Last updated: ${new Date(post.updated_at).toLocaleDateString()}`}
+            title={
+                <div className="flex flex-col space-y-1 py-1">
+                    <h1 className="text-xl font-semibold text-gray-900 m-0">Edit: {post.title}</h1>
+                    <p className="text-sm text-gray-500 m-0">Last updated: {new Date(post.updated_at).toLocaleDateString()}</p>
+                </div>
+            }
         >
             <Head title={`Edit - ${post.title}`} />
             
@@ -97,8 +105,6 @@ export default function PostEdit({ post }) {
                 {/* Sticky Header */}
                 <div className="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
                     <ArticleHeader
-                        title="Edit Article"
-                        subtitle="Update your blog post"
                         onSaveDraft={() => handleSaveDraft(form)}
                         onPublish={post.status !== 'published' ? () => handlePublish(form) : () => form.submit()}
                         onDelete={handleDelete}

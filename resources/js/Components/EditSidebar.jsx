@@ -2,7 +2,6 @@ import React from 'react';
 import PostStatusCard from './EditSidebar/PostStatusCard';
 import PublishSettingsCard from './EditSidebar/PublishSettingsCard';
 import FeaturedImageCard from './EditSidebar/FeaturedImageCard';
-import SEOSettingsCard from './EditSidebar/SEOSettingsCard';
 import PostActionsCard from './EditSidebar/PostActionsCard';
 
 export default function EditSidebar({ 
@@ -41,13 +40,6 @@ export default function EditSidebar({
                 onThumbnailChange={onThumbnailChange}
                 userRole={userRole}
             />
-
-            {/* SEO Settings (Optional) */}
-            {showSEO && (
-                <SEOSettingsCard
-                    userRole={userRole}
-                />
-            )}
 
             {/* Admin Actions */}
             <PostActionsCard

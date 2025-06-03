@@ -1,10 +1,11 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PostController;
+use App\Http\Controllers\PostsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\EditorApplicationController;
+use App\Http\Controllers\ImageUploadController;  // Add this import
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -31,8 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Admin only routes
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
-        
-        // User Management Routes - MAKE SURE THESE EXIST
+        // User Management Routes
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::put('/users/{user}', [UserController::class, 'updateUser'])->name('users.update');
@@ -45,9 +45,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/editor-applications/{application}/reject', [EditorApplicationController::class, 'reject'])->name('editor-applications.reject');
     });
     
-    // Editor and Admin routes
+    // Image Upload Route - Add this new route
+    Route::post('/upload-image', [ImageUploadController::class, 'upload'])->name('image.upload');
+    
+    // For testing storage configuration
+    Route::get('/test-storage', [ImageUploadController::class, 'testStorage'])->name('image.test-storage');
+    
+    // Article Management Routes (Editor and Admin)
     Route::middleware(['role:editor|admin'])->group(function () {
-        Route::resource('posts', PostController::class);
+        // 1. ROUTE STATIS - letakkan di awal
+        Route::get('/posts/pending/review', [PostsController::class, 'pending'])->name('posts.pending');
+        Route::get('/posts/create', [PostsController::class, 'create'])->name('posts.create');
+        Route::get('/posts', [PostsController::class, 'index'])->name('posts.index');
+        Route::post('/posts', [PostsController::class, 'store'])->name('posts.store');
+        
+        // 2. ROUTE DINAMIS - letakkan setelah route statis
+        Route::get('/posts/{post}/edit', [PostsController::class, 'edit'])->name('posts.edit');
+        Route::put('/posts/{post}', [PostsController::class, 'update'])->name('posts.update');
+        Route::delete('/posts/{post}', [PostsController::class, 'destroy'])->name('posts.destroy');
+        Route::get('/posts/{post}', [PostsController::class, 'show'])->name('posts.show');
+        
+        // 3. ROUTE LAINNYA
+        Route::post('/posts/{post}/submit-review', [PostsController::class, 'submitForReview'])->name('posts.submit-review');
+        Route::post('/posts/{post}/approve', [PostsController::class, 'approve'])->name('posts.approve');
+        Route::post('/posts/{post}/reject', [PostsController::class, 'reject'])->name('posts.reject');
     });
 });
 
@@ -57,5 +78,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [UserController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [UserController::class, 'destroy'])->name('profile.destroy');
 });
+
 
 require __DIR__.'/auth.php';

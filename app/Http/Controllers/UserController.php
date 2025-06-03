@@ -74,19 +74,37 @@ class UserController extends Controller
     {
         $user = Auth::user();
         
-        try {
-            if ($user->hasRole('admin')) {
-                $data = $this->getAdminData();
-                return Inertia::render('Dashboard/index', array_merge($data, ['userRole' => 'admin']));
-            } elseif ($user->hasRole('editor')) {
-                $data = $this->getEditorData();
-                return Inertia::render('Dashboard/index', array_merge($data, ['userRole' => 'editor']));
-            } else {
-                // Redirect viewers to blog
-                return redirect('/blog');
-            }
-        } catch (\Exception $e) {
-            return redirect('/blog')->withErrors(['error' => 'Unable to load dashboard']);
+        if ($user->hasRole('admin')) {
+            return Inertia::render('Dashboard/AdminDashboard', [
+                'stats' => [
+                    'total_users' => \App\Models\User::count(),
+                    'total_posts' => \App\Models\Post::count(),
+                    'pending_applications' => \App\Models\EditorApplication::where('status', 'pending')->count(),
+                ],
+                'recentPosts' => \App\Models\Post::latest()->take(5)->get(),
+                'permissions' => ['manage-users', 'manage-posts', 'manage-applications']
+            ]);
+        } elseif ($user->hasRole('editor')) {
+            // Use author_id for editor's posts (not user_id)
+            $posts = \App\Models\Post::where('author_id', $user->id)
+                ->latest()
+                ->take(5)
+                ->get();
+
+            $stats = [
+                'total_posts' => \App\Models\Post::where('author_id', $user->id)->count(),
+                'published_posts' => \App\Models\Post::where('author_id', $user->id)->where('status', 'published')->count(),
+                'draft_posts' => \App\Models\Post::where('author_id', $user->id)->where('status', 'draft')->count(),
+            ];
+
+            return Inertia::render('Dashboard/EditorDashboard', [
+                'stats' => $stats,
+                'posts' => $posts,
+                'permissions' => ['create-posts', 'edit-posts']
+            ]);
+        } else {
+            // Viewers redirect to blog
+            return redirect('/blog')->with('message', 'Welcome! Explore our stories.');
         }
     }
 

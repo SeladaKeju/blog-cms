@@ -274,187 +274,194 @@ export default function UserManager({ users, filters = {}, stats = {} }) {
 
     return (
         <AuthenticatedLayout
-            title="User Management"
-            subtitle="Manage users and their roles"
+            title={
+                <div className="flex flex-col space-y-1 py-1">
+                    <h1 className="text-xl font-semibold text-gray-900 m-0">User Management</h1>
+                    <p className="text-sm text-gray-500 m-0">Manage users and their roles</p>
+                </div>
+            }
         >
             <Head title="User Management" />
 
-            <div className="space-y-6">
-                {/* Header with Stats */}
-                <div className="flex justify-between items-start">
-                    <div>
-                        <Title level={2} className="mb-2">User Management</Title>
-                        <div className="flex gap-6">
-                            <div className="flex items-center gap-2">
-                                <Badge count={stats.total || 0} showZero color="#1677ff" />
-                                <Text className="text-gray-600">Total Users</Text>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Badge count={stats.admins || 0} showZero color="#ff4d4f" />
-                                <Text className="text-gray-600">Admins</Text>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Badge count={stats.editors || 0} showZero color="#1677ff" />
-                                <Text className="text-gray-600">Editors</Text>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Badge count={stats.viewers || 0} showZero color="#52c41a" />
-                                <Text className="text-gray-600">Viewers</Text>
+            {/* Updated to match admin dashboard layout structure */}
+            <div className="px-6 py-6 md:px-10">
+                <div className="user-management space-y-8 md:pl-[64px]">
+                    {/* Header with Stats */}
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <Title level={2} className="mb-2">User Management</Title>
+                            <div className="flex gap-6">
+                                <div className="flex items-center gap-2">
+                                    <Badge count={stats.total || 0} showZero color="#1677ff" />
+                                    <Text className="text-gray-600">Total Users</Text>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Badge count={stats.admins || 0} showZero color="#ff4d4f" />
+                                    <Text className="text-gray-600">Admins</Text>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Badge count={stats.editors || 0} showZero color="#1677ff" />
+                                    <Text className="text-gray-600">Editors</Text>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Badge count={stats.viewers || 0} showZero color="#52c41a" />
+                                    <Text className="text-gray-600">Viewers</Text>
+                                </div>
                             </div>
                         </div>
+
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={openCreateForm}
+                        >
+                            Add User
+                        </Button>
                     </div>
 
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={openCreateForm}
-                    >
-                        Add User
-                    </Button>
-                </div>
-
-                {/* Filters */}
-                <Card>
-                    <div className="flex gap-4 items-center">
-                        <Search
-                            placeholder="Search by name or email..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onSearch={handleSearch}
-                            style={{ width: 300 }}
-                            enterButton={<SearchOutlined />}
-                        />
-                        <Select
-                            placeholder="Filter by role"
-                            value={roleFilter}
-                            onChange={handleRoleFilter}
-                            style={{ width: 150 }}
-                            allowClear
-                        >
-                            <Option value="admin">Admin</Option>
-                            <Option value="editor">Editor</Option>
-                            <Option value="viewer">Viewer</Option>
-                        </Select>
-                    </div>
-                </Card>
-
-                {/* Users Table */}
-                <Card>
-                    <Table
-                        columns={columns}
-                        dataSource={users.data}
-                        rowKey="id"
-                        loading={loading}
-                        pagination={{
-                            current: users.current_page,
-                            total: users.total,
-                            pageSize: users.per_page,
-                            showSizeChanger: true,
-                            showQuickJumper: true,
-                            showTotal: (total, range) =>
-                                `${range[0]}-${range[1]} of ${total} users`,
-                            onChange: (page, pageSize) => {
-                                router.get(route('admin.users.index'), {
-                                    page,
-                                    per_page: pageSize,
-                                    search: searchTerm,
-                                    role: roleFilter
-                                }, {
-                                    preserveState: true,
-                                    preserveScroll: true
-                                });
-                            }
-                        }}
-                    />
-                </Card>
-
-                {/* User Form Modal */}
-                <Modal
-                    title={formMode === 'create' ? 'Create New User' : 'Edit User'}
-                    open={isFormOpen}
-                    onCancel={() => setIsFormOpen(false)}
-                    footer={null}
-                    width={600}
-                >
-                    <Form
-                        form={form}
-                        layout="vertical"
-                        onFinish={handleFormSubmit}
-                        className="mt-4"
-                    >
-                        <Form.Item
-                            label="Name"
-                            name="name"
-                            rules={[{ required: true, message: 'Please enter name' }]}
-                        >
-                            <Input placeholder="Enter user name" />
-                        </Form.Item>
-
-                        <Form.Item
-                            label="Email"
-                            name="email"
-                            rules={[
-                                { required: true, message: 'Please enter email' },
-                                { type: 'email', message: 'Please enter valid email' }
-                            ]}
-                        >
-                            <Input placeholder="Enter email address" />
-                        </Form.Item>
-
-                        {formMode === 'create' && (
-                            <>
-                                <Form.Item
-                                    label="Password"
-                                    name="password"
-                                    rules={[{ required: true, message: 'Please enter password' }]}
-                                >
-                                    <Input.Password placeholder="Enter password" />
-                                </Form.Item>
-
-                                <Form.Item
-                                    label="Confirm Password"
-                                    name="password_confirmation"
-                                    rules={[
-                                        { required: true, message: 'Please confirm password' },
-                                        ({ getFieldValue }) => ({
-                                            validator(_, value) {
-                                                if (!value || getFieldValue('password') === value) {
-                                                    return Promise.resolve();
-                                                }
-                                                return Promise.reject(new Error('Passwords do not match'));
-                                            },
-                                        }),
-                                    ]}
-                                >
-                                    <Input.Password placeholder="Confirm password" />
-                                </Form.Item>
-                            </>
-                        )}
-
-                        <Form.Item
-                            label="Role"
-                            name="role"
-                            rules={[{ required: true, message: 'Please select role' }]}
-                        >
-                            <Select placeholder="Select user role">
+                    {/* Filters */}
+                    <Card>
+                        <div className="flex gap-4 items-center">
+                            <Search
+                                placeholder="Search by name or email..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onSearch={handleSearch}
+                                style={{ width: 300 }}
+                                enterButton={<SearchOutlined />}
+                            />
+                            <Select
+                                placeholder="Filter by role"
+                                value={roleFilter}
+                                onChange={handleRoleFilter}
+                                style={{ width: 150 }}
+                                allowClear
+                            >
                                 <Option value="admin">Admin</Option>
                                 <Option value="editor">Editor</Option>
                                 <Option value="viewer">Viewer</Option>
                             </Select>
-                        </Form.Item>
+                        </div>
+                    </Card>
 
-                        <Form.Item className="mb-0">
-                            <div className="flex justify-end gap-2">
-                                <Button onClick={() => setIsFormOpen(false)}>
-                                    Cancel
-                                </Button>
-                                <Button type="primary" htmlType="submit" loading={loading}>
-                                    {formMode === 'create' ? 'Create User' : 'Update User'}
-                                </Button>
-                            </div>
-                        </Form.Item>
-                    </Form>
-                </Modal>
+                    {/* Users Table */}
+                    <Card>
+                        <Table
+                            columns={columns}
+                            dataSource={users.data}
+                            rowKey="id"
+                            loading={loading}
+                            pagination={{
+                                current: users.current_page,
+                                total: users.total,
+                                pageSize: users.per_page,
+                                showSizeChanger: true,
+                                showQuickJumper: true,
+                                showTotal: (total, range) =>
+                                    `${range[0]}-${range[1]} of ${total} users`,
+                                onChange: (page, pageSize) => {
+                                    router.get(route('admin.users.index'), {
+                                        page,
+                                        per_page: pageSize,
+                                        search: searchTerm,
+                                        role: roleFilter
+                                    }, {
+                                        preserveState: true,
+                                        preserveScroll: true
+                                    });
+                                }
+                            }}
+                        />
+                    </Card>
+
+                    {/* User Form Modal */}
+                    <Modal
+                        title={formMode === 'create' ? 'Create New User' : 'Edit User'}
+                        open={isFormOpen}
+                        onCancel={() => setIsFormOpen(false)}
+                        footer={null}
+                        width={600}
+                    >
+                        <Form
+                            form={form}
+                            layout="vertical"
+                            onFinish={handleFormSubmit}
+                            className="mt-4"
+                        >
+                            <Form.Item
+                                label="Name"
+                                name="name"
+                                rules={[{ required: true, message: 'Please enter name' }]}
+                            >
+                                <Input placeholder="Enter user name" />
+                            </Form.Item>
+
+                            <Form.Item
+                                label="Email"
+                                name="email"
+                                rules={[
+                                    { required: true, message: 'Please enter email' },
+                                    { type: 'email', message: 'Please enter valid email' }
+                                ]}
+                            >
+                                <Input placeholder="Enter email address" />
+                            </Form.Item>
+
+                            {formMode === 'create' && (
+                                <>
+                                    <Form.Item
+                                        label="Password"
+                                        name="password"
+                                        rules={[{ required: true, message: 'Please enter password' }]}
+                                    >
+                                        <Input.Password placeholder="Enter password" />
+                                    </Form.Item>
+
+                                    <Form.Item
+                                        label="Confirm Password"
+                                        name="password_confirmation"
+                                        rules={[
+                                            { required: true, message: 'Please confirm password' },
+                                            ({ getFieldValue }) => ({
+                                                validator(_, value) {
+                                                    if (!value || getFieldValue('password') === value) {
+                                                        return Promise.resolve();
+                                                    }
+                                                    return Promise.reject(new Error('Passwords do not match'));
+                                                },
+                                            }),
+                                        ]}
+                                    >
+                                        <Input.Password placeholder="Confirm password" />
+                                    </Form.Item>
+                                </>
+                            )}
+
+                            <Form.Item
+                                label="Role"
+                                name="role"
+                                rules={[{ required: true, message: 'Please select role' }]}
+                            >
+                                <Select placeholder="Select user role">
+                                    <Option value="admin">Admin</Option>
+                                    <Option value="editor">Editor</Option>
+                                    <Option value="viewer">Viewer</Option>
+                                </Select>
+                            </Form.Item>
+
+                            <Form.Item className="mb-0">
+                                <div className="flex justify-end gap-2">
+                                    <Button onClick={() => setIsFormOpen(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button type="primary" htmlType="submit" loading={loading}>
+                                        {formMode === 'create' ? 'Create User' : 'Update User'}
+                                    </Button>
+                                </div>
+                            </Form.Item>
+                        </Form>
+                    </Modal>
+                </div>
             </div>
         </AuthenticatedLayout>
     );
