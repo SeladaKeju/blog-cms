@@ -106,13 +106,14 @@ export default function PostEdit({ post }) {
                 <div className="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
                     <ArticleHeader
                         onSaveDraft={() => handleSaveDraft(form)}
-                        onPublish={post.status !== 'published' ? () => handlePublish(form) : () => form.submit()}
+                        onPublish={() => handlePublish(form)} // FIXED: Always use handlePublish instead of form.submit()
                         onDelete={handleDelete}
                         loading={loading}
                         deleteLoading={deleteLoading}
                         showDelete={userRole === 'admin' || post.author_id === auth.user.id}
                         publishText={post.status !== 'published' ? "Publish" : "Update"}
                         isPublished={post.status === 'published'}
+                        postSlug={post.slug} // Add this to support View Live functionality
                     />
                 </div>
 
@@ -144,7 +145,7 @@ export default function PostEdit({ post }) {
                                             userRole={userRole}
                                             currentThumbnail={post.thumbnail}
                                             onThumbnailChange={(fileList) => handleThumbnailChange(fileList, form)}
-                                            onSubmitForReview={handleSubmitForReview}
+                                            // Remove onSubmitForReview prop
                                             onApprove={handleApprove}
                                             onReject={handleReject}
                                             loading={loading}

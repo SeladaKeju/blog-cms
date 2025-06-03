@@ -13,12 +13,19 @@ export function useArticleForm(initialPost = null) {
     const submitForm = (formData, url, method = 'POST', successMessage = 'Operation completed successfully') => {
         setLoading(true);
         
+        console.log(`Submitting to URL: ${url} with method: ${method}`);
+        
         const options = {
             forceFormData: true,
             onSuccess: () => {
                 message.success(successMessage);
                 if (!initialPost) {
-                    router.get('/article');
+                    router.get('/posts'); // Fixed: redirect to /posts, not /article
+                } else {
+                    // For published posts, reload to show updated status
+                    if (formData.get('status') === 'published') {
+                        router.get('/posts');
+                    }
                 }
             },
             onError: (errors) => {
@@ -73,8 +80,17 @@ export function useArticleForm(initialPost = null) {
     const handleSaveDraft = (form) => {
         const values = form.getFieldsValue();
         const formData = prepareFormData(values, 'draft');
-        const url = initialPost ? `/posts/${initialPost.id}` : '/posts';
-        const successMessage = initialPost ? 'Post saved as draft successfully' : 'Draft created successfully';
+        
+        // Use slug for URL if available
+        const url = initialPost 
+            ? (initialPost.slug 
+                ? `/posts/${initialPost.slug}` 
+                : `/posts/${initialPost.id}`)
+            : '/posts';
+            
+        const successMessage = initialPost 
+            ? 'Post saved as draft successfully' 
+            : 'Draft created successfully';
         
         submitForm(formData, url, 'POST', successMessage);
     };
@@ -83,8 +99,19 @@ export function useArticleForm(initialPost = null) {
         const values = form.getFieldsValue();
         const publishedAt = new Date().toISOString().slice(0, 16);
         const formData = prepareFormData(values, 'published', publishedAt);
-        const url = initialPost ? `/posts/${initialPost.id}` : '/posts';
-        const successMessage = initialPost ? 'Post published successfully' : 'Post created and published successfully';
+        
+        // IMPORTANT: Use slug for the URL if available
+        const url = initialPost 
+            ? (initialPost.slug 
+                ? `/posts/${initialPost.slug}` 
+                : `/posts/${initialPost.id}`)
+            : '/posts';
+            
+        console.log('Publishing to URL:', url);
+        
+        const successMessage = initialPost 
+            ? 'Post published successfully' 
+            : 'Post created and published successfully';
         
         submitForm(formData, url, 'POST', successMessage);
     };
@@ -101,10 +128,16 @@ export function useArticleForm(initialPost = null) {
             cancelText: 'Cancel',
             onOk() {
                 setDeleteLoading(true);
-                router.delete(`/posts/${initialPost.id}`, {
+                
+                // Use slug if available
+                const url = initialPost.slug 
+                    ? `/posts/${initialPost.slug}` 
+                    : `/posts/${initialPost.id}`;
+                    
+                router.delete(url, {
                     onSuccess: () => {
                         message.success('Post deleted successfully');
-                        router.get('/article');
+                        router.get('/posts'); // Fixed: redirect to /posts, not /article
                     },
                     onError: () => {
                         message.error('Failed to delete post');

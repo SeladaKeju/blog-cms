@@ -20,10 +20,10 @@ export default function ArticleHeader({
 
     return (
         <div className="bg-white">
-            <div className="container mx-auto px-6 py-4 md:pl-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div className="flex justify-between items-center">
-                    {/* Left side with button aligned to title */}
-                    <div className="flex items-center ml-0 md:ml-[65px]">
+                    {/* Left side - aligned with main header title */}
+                    <div>
                         <Button 
                             icon={<ArrowLeftOutlined />} 
                             type="text" 
@@ -31,8 +31,8 @@ export default function ArticleHeader({
                             className="text-gray-600 hover:text-gray-900 mr-4"
                         />
                         <div>
-                            <h1 className="text-xl font-semibold text-gray-900 m-0">{title}</h1>
-                            <p className="text-sm text-gray-500 m-0">{subtitle}</p>
+                            <h1 className="text-xl font-semibold text-blue-500">{title}</h1>
+                            <p className="text-sm text-gray-500">{subtitle}</p>
                         </div>
                     </div>
                     

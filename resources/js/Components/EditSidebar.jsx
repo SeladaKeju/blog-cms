@@ -1,8 +1,9 @@
 import React from 'react';
-import PostStatusCard from './EditSidebar/PostStatusCard';
+import { Space } from 'antd';
 import PublishSettingsCard from './EditSidebar/PublishSettingsCard';
 import FeaturedImageCard from './EditSidebar/FeaturedImageCard';
 import PostActionsCard from './EditSidebar/PostActionsCard';
+import ExcerptCard from './EditSidebar/ExcerptCard'; // Add this import
 
 export default function EditSidebar({ 
     form, 
@@ -10,7 +11,6 @@ export default function EditSidebar({
     userRole,
     currentThumbnail, 
     onThumbnailChange,
-    onSubmitForReview,
     onApprove,
     onReject,
     loading = false,
@@ -18,19 +18,14 @@ export default function EditSidebar({
 }) {
     return (
         <div className="edit-sidebar space-y-6">
-            {/* Post Status Management */}
-            <PostStatusCard
-                post={post}
-                userRole={userRole}
-                onSubmitForReview={onSubmitForReview}
-                onApprove={onApprove}
-                onReject={onReject}
-                loading={loading}
-            />
-
             {/* Publish Settings */}
             <PublishSettingsCard
                 post={post}
+                userRole={userRole}
+            />
+
+            {/* Add Excerpt Card after Publish Settings */}
+            <ExcerptCard 
                 userRole={userRole}
             />
 
