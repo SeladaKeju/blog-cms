@@ -26,13 +26,18 @@ export default function EditorDashboard({
 
     return (
         <AuthenticatedLayout
-            title="Editor Dashboard"
-            subtitle="Manage your articles and content"
+            title={
+                <div className="flex flex-col space-y-1 py-1">
+                    <h1 className="text-xl font-semibold text-gray-900 m-0">Editor Dashboard</h1>
+                    <p className="text-sm text-gray-500 m-0">Manage your articles and content</p>
+                </div>
+            }
         >
             <Head title="Dashboard" />
 
-            <div className="p-6">
-                <div className="editor-dashboard space-y-8">
+            {/* Fixed content alignment to match header title */}
+            <div className="px-6 py-6 md:px-10">
+                <div className="editor-dashboard space-y-8 md:pl-16">
                     {/* Content Statistics */}
                     <div>
                         <Title level={3} className="mb-6">Your Content Overview</Title>
@@ -123,74 +128,35 @@ export default function EditorDashboard({
                     {/* Recent Articles */}
                     <div>
                         <div className="flex items-center justify-between mb-6">
-                            <Title level={3}>Your Recent Articles</Title>
-                            <div className="flex gap-3">
-                                <Button 
-                                    icon={<EyeOutlined />}
-                                    onClick={() => window.open('/blog', '_blank')}
-                                >
-                                    View Blog
-                                </Button>
-                                {permissions.includes('create-posts') && (
-                                    <Button 
-                                        onClick={() => navigateTo('/posts')}
-                                    >
-                                        Manage Articles
-                                    </Button>
-                                )}
-                            </div>
+                            <Title level={3}>Your Published Articles</Title>
                         </div>
 
-                        {posts && posts.length > 0 ? (
+                        {posts && posts.filter(post => post.status === 'published').length > 0 ? (
                             <div className="grid grid-cols-1 gap-6">
-                                {posts.slice(0, 5).map((post) => (
-                                    <Card 
-                                        key={post.id}
-                                        hoverable
-                                        className="cursor-pointer"
-                                        onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
-                                    >
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                <Title level={4} className="mb-2">
-                                                    {post.title}
-                                                </Title>
-                                                <p className="text-gray-600 mb-4 line-clamp-2">
-                                                    {post.excerpt}
-                                                </p>
-                                                <div className="flex items-center gap-4 text-sm text-gray-500">
-                                                    <span>Status: <span className={`font-medium ${post.status === 'published' ? 'text-green-600' : 'text-orange-600'}`}>
-                                                        {post.status}
-                                                    </span></span>
-                                                    <span>•</span>
-                                                    <span>{new Date(post.created_at).toLocaleDateString()}</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2 ml-4">
-                                                <Button
-                                                    type="text"
-                                                    icon={<EditOutlined />}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        navigateTo(`/posts/${post.id}/edit`);
-                                                    }}
-                                                >
-                                                    Edit
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                ))}
+                                {posts
+                                    .filter(post => post.status === 'published')
+                                    .slice(0, 5)
+                                    .map((post) => (
+                                        <ArticleCard
+                                            key={post.id}
+                                            article={post}
+                                            onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
+                                            showStatus={true}
+                                            thumbnailSize="medium"  // Use standard medium size
+                                            titleSize={{ level: 4, fontSize: '18px' }}
+                                            excerptRows={2}
+                                        />
+                                    ))}
                             </div>
                         ) : (
                             <Card>
                                 <div className="text-center py-16">
                                     <FileTextOutlined style={{ fontSize: '64px', color: '#d9d9d9' }} />
                                     <Title level={4} className="mt-4 mb-2" type="secondary">
-                                        No articles yet
+                                        No published articles yet
                                     </Title>
                                     <p className="text-gray-500 mb-6">
-                                        Create your first article to get started
+                                        Publish your first article to see it here
                                     </p>
                                     <Button 
                                         type="primary"

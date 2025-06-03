@@ -20,8 +20,12 @@ export default function PostCreate() {
 
     return (
         <AuthenticatedLayout
-            title="Create New Article"
-            subtitle="Write and publish your new blog post"
+            title={
+                <div className="flex flex-col space-y-1 py-1">
+                    <h1 className="text-xl font-semibold text-gray-900 m-0">Create New Article</h1>
+                    <p className="text-sm text-gray-500 m-0">Write and publish your new blog post</p>
+                </div>
+            }
         >
             <Head title="Create Article" />
 
@@ -30,8 +34,6 @@ export default function PostCreate() {
                 {/* Sticky Header */}
                 <div className="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
                     <ArticleHeader
-                        title="Create Article"
-                        subtitle="Write and publish your new blog post"
                         onSaveDraft={() => handleSaveDraft(form)}
                         onPublish={() => handlePublish(form)}
                         loading={loading}

@@ -24,8 +24,14 @@ export default function ArticleManager({ posts, filters }) {
         clearFilters
     } = useFilters(filters, 'article');
 
-    const handleEdit = (post) => {
-        router.get(`/posts/${post.id}/edit`);
+    const handleEdit = (article) => {
+        if (!article) {
+            console.error('No article provided to handleEdit function');
+            return;
+        }
+        
+        // Use slug instead of id for navigation
+        router.get(`/posts/${article.slug}/edit`);
     };
 
     const handleCreateArticle = () => {
@@ -85,115 +91,88 @@ export default function ArticleManager({ posts, filters }) {
 
     return (
         <AuthenticatedLayout
-            title="Blog: List of Articles" 
-            subtitle="Manage your blog posts and articles"
+            title={
+                <div className="flex flex-col space-y-1 py-1">
+                    <h1 className="text-xl font-semibold text-gray-900 m-0">Article Manager</h1>
+                    <p className="text-sm text-gray-500 m-0">Manage your blog posts and articles</p>
+                </div>
+            }
             fullHeight={true}
         >
             <Head title="Article Manager" />
 
-            <div className="h-full flex flex-col">
-                {/* Header Section - with simplified padding */}
-                <div className="bg-white border-b border-gray-100 px-8 py-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <h2 className="text-2xl font-medium text-gray-800">Articles</h2>
-                            <p className="text-sm text-gray-500 mt-1">
-                                {posts && posts.length > 0 
-                                    ? `${posts.length} article${posts.length !== 1 ? 's' : ''} found`
-                                    : 'No articles found'
-                                }
-                            </p>
+            {/* Updated to match dashboard layout structure */}
+            <div className="px-6 py-6 md:px-8">
+                <div className="article-manager space-y-8 md:pl-[45px]">
+                    {/* Header Section */}
+                    <div className="bg-white border border-gray-100 rounded-md shadow-sm">
+                        <div className="px-6 py-5">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-medium text-gray-800">Articles</h2>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        {posts && posts.length > 0 
+                                            ? `${posts.length} article${posts.length !== 1 ? 's' : ''} found`
+                                            : 'No articles found'
+                                        }
+                                    </p>
+                                </div>
+                                
+                                {/* Create button */}
+                                <CreateButton />
+                            </div>
+
+                            <SearchAndFilters
+                                searchTerm={searchTerm}
+                                setSearchTerm={setSearchTerm}
+                                onSearch={handleSearch}
+                                filters={filterConfig}
+                                onClearFilters={clearFilters}
+                                showClearButton={searchTerm || statusFilter}
+                                searchPlaceholder="Search articles..."
+                            />
                         </div>
-                        
-                        {/* Create button moved here for better visibility */}
-                        <CreateButton />
                     </div>
 
-                    <SearchAndFilters
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
-                        onSearch={handleSearch}
-                        filters={filterConfig}
-                        onClearFilters={clearFilters}
-                        showClearButton={searchTerm || statusFilter}
-                        searchPlaceholder="Search articles..."
-                    />
-                </div>
-
-                {/* Content Area - with simplified padding */}
-                <div className="flex-1 overflow-auto bg-gray-50">
-                    <div className="px-8 py-6">
-                        {posts && posts.length > 0 ? (
-                            <div className="space-y-6">
-                                {posts.map((article) => (
-                                    <ArticleCard
-                                        key={article.id}
-                                        article={article}
-                                        onClick={handleEdit}
-                                        showStatus={true}
-                                        imageSize={{ width: 180, height: 120 }}
-                                        titleSize={{ level: 4, fontSize: '20px' }}
-                                        excerptRows={3}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <EmptyState
-                                icon={<FileTextOutlined style={{ fontSize: '64px', color: '#d9d9d9' }} />}
-                                title={searchTerm || statusFilter 
-                                    ? 'No articles match your search' 
-                                    : 'No articles yet'
-                                }
-                                description={searchTerm || statusFilter 
-                                    ? 'Try adjusting your search terms or filters'
-                                    : 'Create your first article to get started'
-                                }
-                                buttonText="Create First Article"
-                                buttonIcon={<PlusOutlined />}
-                                onButtonClick={handleCreateArticle}
-                                showButton={!(searchTerm || statusFilter)}
-                                customButton={<CreateButton text="Create First Article" />}
-                            />
-                        )}
+                    {/* Content Area */}
+                    <div className="bg-white border border-gray-100 rounded-md shadow-sm">
+                        <div className="px-6 py-6">
+                            {posts && posts.length > 0 ? (
+                                <div className="space-y-6">
+                                    {posts.map((article) => (
+                                        <ArticleCard
+                                            key={article.id}
+                                            article={article}
+                                            onClick={() => handleEdit(article)}
+                                            showStatus={true}
+                                            thumbnailSize="medium"
+                                            titleSize={{ level: 4, fontSize: '20px' }}
+                                            excerptRows={3}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <EmptyState
+                                    icon={<FileTextOutlined style={{ fontSize: '64px', color: '#d9d9d9' }} />}
+                                    title={searchTerm || statusFilter 
+                                        ? 'No articles match your search' 
+                                        : 'No articles yet'
+                                    }
+                                    description={searchTerm || statusFilter 
+                                        ? 'Try adjusting your search terms or filters'
+                                        : 'Create your first article to get started'
+                                    }
+                                    buttonText="Create First Article"
+                                    buttonIcon={<PlusOutlined />}
+                                    onButtonClick={handleCreateArticle}
+                                    showButton={!(searchTerm || statusFilter)}
+                                    customButton={<CreateButton text="Create First Article" />}
+                                />
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <style jsx global>{`
-                /* Styling for filters */
-                .filter-select .ant-select-selector {
-                    border-radius: 6px !important;
-                    border-color: #e5e7eb !important;
-                }
-                .filter-select:hover .ant-select-selector {
-                    border-color: #d1d5db !important;
-                }
-                .filter-select.ant-select-focused .ant-select-selector {
-                    border-color: #000 !important;
-                    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1) !important;
-                }
-                
-                /* Enhanced Create Button */
-                .create-button {
-                    border-radius: 6px !important;
-                    background-color: #1677ff !important;
-                    border: none !important;
-                    box-shadow: 0 2px 0 rgba(5, 125, 255, 0.1) !important;
-                    font-weight: 500 !important;
-                    height: 36px !important;
-                    padding: 0 16px !important;
-                }
-                
-                .create-button:hover {
-                    background-color: #4096ff !important;
-                    transform: translateY(-1px);
-                    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1) !important;
-                }
-                
-                .create-button:active {
-                    transform: translateY(0);
-                }
-            `}</style>
         </AuthenticatedLayout>
     );
 }

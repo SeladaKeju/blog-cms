@@ -148,13 +148,18 @@ export default function AdminDashboard({
 
     return (
         <AuthenticatedLayout
-            title="Admin Dashboard"
-            subtitle="System overview and management"
+            title={
+                <div className="flex flex-col space-y-1 py-1">
+                    <h1 className="text-xl font-semibold text-gray-900 m-0">Admin Dashboard</h1>
+                    <p className="text-sm text-gray-500 m-0">System overview and management</p>
+                </div>
+            }
         >
             <Head title="Admin Dashboard" />
             
-            <div className="p-6">
-                <div className="space-y-6">
+            {/* Updated layout structure to match EditorDashboard */}
+            <div className="px-6 py-6 md:px-10">
+                <div className="admin-dashboard space-y-8 md:pl-16">
                     {/* Stats Cards */}
                     <Row gutter={[16, 16]}>
                         <Col xs={24} sm={12} lg={6}>

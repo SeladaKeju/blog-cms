@@ -15,25 +15,28 @@ export default function ArticleHeader({
     isPublished = false
 }) {
     const handleBack = () => {
-        router.get('/article');
+        router.get('/posts');
     };
 
     return (
         <div className="bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="container mx-auto px-6 py-4 md:pl-8">
                 <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-4">
+                    {/* Left side with button aligned to title */}
+                    <div className="flex items-center ml-0 md:ml-[65px]">
                         <Button 
                             icon={<ArrowLeftOutlined />} 
                             type="text" 
                             onClick={handleBack}
-                            className="text-gray-600 hover:text-gray-900"
+                            className="text-gray-600 hover:text-gray-900 mr-4"
                         />
                         <div>
-                            <h1 className="text-xl font-semibold text-blue-500">{title}</h1>
-                            <p className="text-sm text-gray-500">{subtitle}</p>
+                            <h1 className="text-xl font-semibold text-gray-900 m-0">{title}</h1>
+                            <p className="text-sm text-gray-500 m-0">{subtitle}</p>
                         </div>
                     </div>
+                    
+                    {/* Right side - action buttons */}
                     <div className="flex items-center space-x-3">
                         {showDelete && (
                             <Button 

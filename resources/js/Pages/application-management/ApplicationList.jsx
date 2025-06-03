@@ -187,87 +187,94 @@ export default function ApplicationList({ applications, filters = {}, stats = {}
 
     return (
         <AuthenticatedLayout
-            title="Editor Applications"
-            subtitle="Review and manage editor applications"
+            title={
+                <div className="flex flex-col space-y-1 py-1">
+                    <h1 className="text-xl font-semibold text-gray-900 m-0">Editor Applications</h1>
+                    <p className="text-sm text-gray-500 m-0">Review and manage editor applications</p>
+                </div>
+            }
         >
             <Head title="Editor Applications" />
 
-            <div className="space-y-6">
-                {/* Header with Stats */}
-                <div className="flex justify-between items-start">
-                    <div>
-                        <Title level={2} className="mb-2">Editor Applications</Title>
-                        <div className="flex gap-6">
-                            <div className="flex items-center gap-2">
-                                <Badge count={stats.total || 0} showZero color="#1677ff" />
-                                <Text className="text-gray-600">Total Applications</Text>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Badge count={stats.pending || 0} showZero color="#fa8c16" />
-                                <Text className="text-gray-600">Pending Review</Text>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Badge count={stats.approved || 0} showZero color="#52c41a" />
-                                <Text className="text-gray-600">Approved</Text>
+            {/* Updated to match admin dashboard layout structure */}
+            <div className="px-6 py-6 md:px-10">
+                <div className="application-management space-y-8 md:pl-[64px]">
+                    {/* Header with Stats */}
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <Title level={2} className="mb-2">Editor Applications</Title>
+                            <div className="flex gap-6">
+                                <div className="flex items-center gap-2">
+                                    <Badge count={stats.total || 0} showZero color="#1677ff" />
+                                    <Text className="text-gray-600">Total Applications</Text>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Badge count={stats.pending || 0} showZero color="#fa8c16" />
+                                    <Text className="text-gray-600">Pending Review</Text>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Badge count={stats.approved || 0} showZero color="#52c41a" />
+                                    <Text className="text-gray-600">Approved</Text>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Filters */}
-                <Card>
-                    <div className="flex gap-4 items-center">
-                        <Search
-                            placeholder="Search by applicant name or email..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onSearch={handleSearch}
-                            style={{ width: 300 }}
-                            enterButton={<SearchOutlined />}
+                    {/* Filters */}
+                    <Card>
+                        <div className="flex gap-4 items-center">
+                            <Search
+                                placeholder="Search by applicant name or email..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onSearch={handleSearch}
+                                style={{ width: 300 }}
+                                enterButton={<SearchOutlined />}
+                            />
+                            <Select
+                                placeholder="Filter by status"
+                                value={statusFilter}
+                                onChange={handleStatusFilter}
+                                style={{ width: 150 }}
+                                allowClear
+                            >
+                                <Option value="pending">Pending</Option>
+                                <Option value="approved">Approved</Option>
+                                <Option value="rejected">Rejected</Option>
+                            </Select>
+                        </div>
+                    </Card>
+
+                    {/* Applications Table */}
+                    <Card>
+                        <Table
+                            columns={columns}
+                            dataSource={applications.data}
+                            rowKey="id"
+                            loading={loading}
+                            pagination={{
+                                current: applications.current_page,
+                                total: applications.total,
+                                pageSize: applications.per_page,
+                                showSizeChanger: true,
+                                showQuickJumper: true,
+                                showTotal: (total, range) =>
+                                    `${range[0]}-${range[1]} of ${total} applications`,
+                                onChange: (page, pageSize) => {
+                                    router.get(route('admin.editor-applications.index'), {
+                                        page,
+                                        per_page: pageSize,
+                                        search: searchTerm,
+                                        status: statusFilter
+                                    }, {
+                                        preserveState: true,
+                                        preserveScroll: true
+                                    });
+                                }
+                            }}
                         />
-                        <Select
-                            placeholder="Filter by status"
-                            value={statusFilter}
-                            onChange={handleStatusFilter}
-                            style={{ width: 150 }}
-                            allowClear
-                        >
-                            <Option value="pending">Pending</Option>
-                            <Option value="approved">Approved</Option>
-                            <Option value="rejected">Rejected</Option>
-                        </Select>
-                    </div>
-                </Card>
-
-                {/* Applications Table */}
-                <Card>
-                    <Table
-                        columns={columns}
-                        dataSource={applications.data}
-                        rowKey="id"
-                        loading={loading}
-                        pagination={{
-                            current: applications.current_page,
-                            total: applications.total,
-                            pageSize: applications.per_page,
-                            showSizeChanger: true,
-                            showQuickJumper: true,
-                            showTotal: (total, range) =>
-                                `${range[0]}-${range[1]} of ${total} applications`,
-                            onChange: (page, pageSize) => {
-                                router.get(route('admin.editor-applications.index'), {
-                                    page,
-                                    per_page: pageSize,
-                                    search: searchTerm,
-                                    status: statusFilter
-                                }, {
-                                    preserveState: true,
-                                    preserveScroll: true
-                                });
-                            }
-                        }}
-                    />
-                </Card>
+                    </Card>
+                </div>
             </div>
         </AuthenticatedLayout>
     );

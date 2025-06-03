@@ -1,39 +1,96 @@
-import { Form, Input, Col } from 'antd';
+import { Form, Input } from 'antd';
 import RichTextEditor from '@/Components/RichTextEditor';
 
-export default function ArticleEditor({ content, onContentChange }) {
+export default function ArticleEditor({ content, onContentChange, readOnly = false }) {
     return (
-        <Col xs={24} lg={16} className="mb-6 lg:mb-0">
-            <div className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow duration-200">
-                {/* Title Section */}
-                <div className="border-b p-4 sm:p-6">
-                    <Form.Item
-                        name="title"
-                        rules={[{ required: true, message: 'Please input the title!' }]}
-                        className="mb-0"
-                    >
-                        <Input 
-                            placeholder="Enter your article title..." 
-                            className="text-xl sm:text-2xl font-bold border-0 px-0 focus:shadow-none"
-                            bordered={false}
-                            style={{ fontSize: 'clamp(20px, 5vw, 24px)', fontWeight: '600' }}
-                        />
-                    </Form.Item>
-                </div>
-
-                {/* Content Editor */}
-                <div className="p-4 sm:p-6">
-                    <Form.Item
-                        name="content"
-                        className="mb-0"
-                    >
-                        <RichTextEditor 
-                            content={content}
-                            onChange={onContentChange}
-                        />
-                    </Form.Item>
-                </div>
+        <div className="article-editor bg-white border border-gray-200 rounded-lg shadow-sm h-full">
+            {/* Title Section - Streamlined */}
+            <div className="border-b border-gray-200 p-4">
+                <Form.Item
+                    name="title"
+                    rules={[{ required: true, message: 'Judul artikel harus diisi!' }]}
+                    className="mb-0"
+                >
+                    <Input 
+                        placeholder="Masukkan judul artikel..." 
+                        className="editor-title-input"
+                        bordered={false}
+                        readOnly={readOnly}
+                    />
+                </Form.Item>
             </div>
-        </Col>
+
+            {/* Content Editor - Optimized padding */}
+            <div className="editor-content p-0">
+                <Form.Item
+                    name="content"
+                    className="mb-0 h-full"
+                >
+                    <RichTextEditor 
+                        content={content}
+                        onChange={onContentChange}
+                        readOnly={readOnly}
+                        className="h-full"
+                    />
+                </Form.Item>
+            </div>
+
+            {/* Added styles for better editor appearance */}
+            <style jsx global>{`
+                .article-editor {
+                    display: flex;
+                    flex-direction: column;
+                    height: 100%;
+                }
+                
+                .editor-title-input {
+                    font-size: 1.75rem !important;
+                    font-weight: 600 !important;
+                    padding: 0 !important;
+                    line-height: 1.3 !important;
+                    height: auto !important;
+                    color: #111827 !important;
+                }
+                
+                .editor-title-input::placeholder {
+                    color: #9CA3AF !important;
+                }
+                
+                .editor-content {
+                    flex: 1;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                }
+                
+                .editor-content .ant-form-item {
+                    height: 100%;
+                    margin-bottom: 0 !important;
+                }
+                
+                /* Rich text editor enhancements */
+                .tiptap-editor-container {
+                    height: 100% !important;
+                    display: flex;
+                    flex-direction: column;
+                }
+                
+                .tiptap {
+                    flex: 1 !important;
+                    height: 100% !important;
+                    overflow-y: auto !important;
+                    padding: 1rem !important;
+                }
+                
+                .ProseMirror {
+                    min-height: calc(100vh - 230px) !important;
+                    height: 100% !important;
+                    padding: 1rem 1.5rem !important;
+                    font-size: 1rem !important;
+                    line-height: 1.7 !important;
+                    color: #374151 !important;
+                }
+            `}</style>
+        </div>
     );
 }

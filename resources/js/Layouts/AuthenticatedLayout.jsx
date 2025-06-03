@@ -10,7 +10,8 @@ import {
     SettingOutlined,
     LogoutOutlined,
     MenuFoldOutlined,
-    MenuUnfoldOutlined
+    MenuUnfoldOutlined,
+    ArrowLeftOutlined
 } from '@ant-design/icons';
 import { router } from '@inertiajs/react';
 
@@ -20,12 +21,14 @@ const { Text } = Typography;
 export default function AuthenticatedLayout({ 
     title = "Dashboard", 
     subtitle = "", 
-    fullHeight = false, 
+    fullHeight = false,
+    articleMode = false, // New prop to enable article-focused mode
     children 
 }) {
     const { auth } = usePage().props;
     const user = auth.user;
-    const [collapsed, setCollapsed] = useState(false);
+    // Auto-collapse sidebar in article mode for more focus
+    const [collapsed, setCollapsed] = useState(articleMode);
 
     // Get user role
     const userRole = user.roles?.[0]?.name || 'viewer';
@@ -92,7 +95,7 @@ export default function AuthenticatedLayout({
                     key: 'posts',
                     icon: <FileTextOutlined />,
                     label: 'All Posts',
-                    onClick: () => router.get('/article'),
+                    onClick: () => router.get('/posts'),
                 },
                 {
                     key: 'pending-posts',
@@ -107,14 +110,8 @@ export default function AuthenticatedLayout({
                     key: 'posts',
                     icon: <FileTextOutlined />,
                     label: 'My Posts',
-                    onClick: () => router.get('/article'),
+                    onClick: () => router.get('/posts'),
                 },
-                {
-                    key: 'bookmarks',
-                    icon: <BookOutlined />,
-                    label: 'Bookmarks',
-                    onClick: () => router.get('/bookmarks'),
-                }
             );
         } else if (userRole === 'viewer') {
             baseItems.push(
@@ -132,51 +129,83 @@ export default function AuthenticatedLayout({
                 }
             );
         }
-
-        // Add blog link for all users
-        baseItems.push({
-            key: 'blog',
-            icon: <BookOutlined />,
-            label: 'View Blog',
-            onClick: () => window.open('/blog', '_blank'),
-        });
-
         return baseItems;
     };
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
-            <Sider 
-                trigger={null} 
-                collapsible 
-                collapsed={collapsed}
-                style={{
-                    background: '#fff',
-                    borderRight: '1px solid #f0f0f0'
-                }}
-                className="custom-sidebar"
-            >
-                <div className="p-4 border-b border-gray-200">
-                    <div className="flex items-center gap-3">
-                        <Avatar size="large" icon={<UserOutlined />} />
-                        {!collapsed && (
-                            <div>
-                                <div className="font-medium text-gray-900">{user.name}</div>
-                                <div className="text-sm text-gray-500 capitalize">{userRole}</div>
-                            </div>
-                        )}
+            {/* Conditionally show sidebar based on article mode */}
+            {!articleMode ? (
+                <Sider 
+                    trigger={null} 
+                    collapsible 
+                    collapsed={collapsed}
+                    collapsedWidth={collapsed ? 0 : 80}  // Set to 0 to completely hide
+                    style={{
+                        background: '#fff',
+                        borderRight: '1px solid #f0f0f0',
+                        position: collapsed ? 'fixed' : 'relative',
+                        left: collapsed ? -250 : 0,  // Move completely off-screen when collapsed
+                        transition: 'all 0.3s',
+                        zIndex: 1000,
+                        height: '100%',
+                        overflow: 'hidden'
+                    }}
+                    className="custom-sidebar"
+                >
+                    {/* Regular sidebar content */}
+                    <div className="p-4 border-b border-gray-200">
+                        <div className="flex items-center gap-3">
+                            <Avatar size="large" icon={<UserOutlined />} />
+                            {!collapsed && (
+                                <div>
+                                    <div className="font-medium text-gray-900">{user.name}</div>
+                                    <div className="text-sm text-gray-500 capitalize">{userRole}</div>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
-                
-                <Menu
-                    mode="inline"
-                    style={{ borderRight: 0, marginTop: 16 }}
-                    items={getMenuItems()}
-                    className="sidebar-menu"
-                />
-            </Sider>
+                    
+                    <Menu
+                        mode="inline"
+                        style={{ borderRight: 0, marginTop: 16 }}
+                        items={getMenuItems()}
+                        className="sidebar-menu"
+                    />
+                </Sider>
+            ) : (
+                // Minimalist sidebar for article mode
+                <Sider 
+                    trigger={null} 
+                    collapsible 
+                    collapsed={true}
+                    collapsedWidth={0}
+                    zeroWidthTriggerStyle={{ display: 'none' }}
+                    style={{ 
+                        position: 'fixed',
+                        height: '100%',
+                        zIndex: 1000,
+                        left: -250,  // Move it completely off-screen (not just -80px)
+                        width: 0,
+                        minWidth: 0,
+                        maxWidth: 0,
+                        overflow: 'hidden',
+                        transition: 'all 0.2s',
+                        display: 'none'  // Add display none for good measure
+                    }}
+                    className="custom-sidebar article-sidebar"
+                >
+                    <Menu
+                        mode="inline"
+                        style={{ borderRight: 0, marginTop: 16 }}
+                        items={getMenuItems()}
+                        className="sidebar-menu"
+                    />
+                </Sider>
+            )}
             
-            <Layout>
+            <Layout className={articleMode ? 'article-layout' : ''}>
+                {/* Simplified header for article mode */}
                 <Header 
                     style={{ 
                         padding: '0 24px', 
@@ -184,22 +213,42 @@ export default function AuthenticatedLayout({
                         borderBottom: '1px solid #f0f0f0',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between'
+                        justifyContent: 'space-between',
+                        height: articleMode ? '56px' : '64px'
                     }}
+                    className={articleMode ? 'article-header' : ''}
                 >
                     <div className="flex items-center gap-4">
-                        <Button
-                            type="text"
-                            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                            onClick={() => setCollapsed(!collapsed)}
-                            style={{
-                                fontSize: '16px',
-                                width: 64,
-                                height: 64,
-                            }}
-                        />
+                        {!articleMode ? (
+                            // Regular toggle button
+                            <Button
+                                type="text"
+                                icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                                onClick={() => setCollapsed(!collapsed)}
+                                style={{
+                                    fontSize: '16px',
+                                    width: 64,
+                                    height: 64,
+                                }}
+                            />
+                        ) : (
+                            // Back button for article mode
+                            <Button
+                                type="text"
+                                icon={<ArrowLeftOutlined />}
+                                onClick={() => router.get('/article')}
+                                style={{
+                                    fontSize: '16px',
+                                }}
+                            >
+                                Back to Articles
+                            </Button>
+                        )}
+                        
                         <div>
-                            <h1 className="text-xl font-semibold text-gray-900 m-0">{title}</h1>
+                            <h1 className={`font-semibold text-gray-900 m-0 ${articleMode ? 'text-lg' : 'text-xl'}`}>
+                                {title}
+                            </h1>
                             {subtitle && (
                                 <Text type="secondary" className="text-sm">{subtitle}</Text>
                             )}
@@ -207,43 +256,48 @@ export default function AuthenticatedLayout({
                     </div>
 
                     <Space size="middle">
-                        {/* Quick Actions based on role */}
-                        {(userRole === 'admin' || userRole === 'editor') && (
-                            <Button 
-                                type="primary"
-                                icon={<FileTextOutlined />}
-                                onClick={() => router.get('/posts/create')}
+                        {/* Simplified actions for article mode */}
+                        {articleMode ? (
+                            <Dropdown
+                                menu={{ items: userMenuItems }}
+                                placement="bottomRight"
+                                arrow
                             >
-                                New Post
-                            </Button>
-                        )}
-
-                        {/* User Profile Dropdown */}
-                        <Dropdown
-                            menu={{ items: userMenuItems }}
-                            placement="bottomRight"
-                            arrow
-                        >
-                            <Button type="text" className="flex items-center gap-2">
                                 <Avatar size="small" icon={<UserOutlined />} />
-                                <span className="hidden md:inline">{user.name}</span>
-                            </Button>
-                        </Dropdown>
+                            </Dropdown>
+                        ) : (
+                            <>
+                                {/* Regular actions */}
+                                <Dropdown
+                                    menu={{ items: userMenuItems }}
+                                    placement="bottomRight"
+                                    arrow
+                                >
+                                    <Button type="text" className="flex items-center gap-2">
+                                        <Avatar size="small" icon={<UserOutlined />} />
+                                        <span className="hidden md:inline">{user.name}</span>
+                                    </Button>
+                                </Dropdown>
+                            </>
+                        )}
                     </Space>
                 </Header>
                 
+                {/* Optimized content area for article mode */}
                 <Content
                     style={{
                         margin: 0,
                         minHeight: fullHeight ? 'calc(100vh - 64px)' : 'auto',
-                        background: '#f5f5f5',
+                        background: articleMode ? '#f8fafc' : '#f5f5f5',
+                        padding: articleMode ? 0 : undefined,
                     }}
+                    className={articleMode ? 'article-content' : ''}
                 >
                     {children}
                 </Content>
             </Layout>
 
-            {/* Simple Modern Hover - Garis Kanan Only */}
+            {/* Add article-specific styles */}
             <style jsx global>{`
                 /* Base Menu Item - Clean & Simple */
                 .custom-sidebar .sidebar-menu .ant-menu-item {
@@ -367,6 +421,83 @@ export default function AuthenticatedLayout({
                     border: none !important;
                     outline: none !important;
                     box-shadow: none !important;
+                }
+
+                /* Enhanced article mode styles */
+                .article-layout {
+                    margin-left: 0 !important;
+                    width: 100% !important;
+                }
+                
+                .article-header {
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                    z-index: 10;
+                    height: auto !important;
+                    padding: 0 !important;
+                }
+                
+                .article-content {
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    overflow-x: hidden !important;
+                    padding: 0 !important;
+                }
+                
+                /* Remove max-width constraints in article mode */
+                .article-layout .ProseMirror {
+                    min-height: calc(100vh - 230px);
+                    padding: 1.5rem;
+                    max-width: none !important;
+                    margin: 0 !important;
+                    color: #374151;
+                }
+                
+                .article-layout .editor-content {
+                    background-color: #ffffff;
+                    width: 100% !important;
+                    max-width: none !important;
+                }
+                
+                /* Make article containers full width */
+                .article-layout .container,
+                .article-layout .container-fluid {
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    padding: 0 !important;
+                }
+                
+                /* Title input in article mode */
+                .article-layout .article-form input[type="text"] {
+                    font-size: 2.25rem;
+                    font-weight: 700;
+                    padding: 1rem 0;
+                    line-height: 1.2;
+                    max-width: 50rem;
+                    margin: 0 auto;
+                }
+                
+                /* Container width for article editing */
+                .article-layout .container {
+                    max-width: 1400px;
+                    padding-left: 1rem;
+                    padding-right: 1rem;
+                }
+                
+                /* Better focus for editor in article mode */
+                .article-layout .editor-main-container {
+                    max-width: 1200px;
+                    margin: 0 auto;
+                }
+                
+                /* Enhanced responsive styling */
+                @media (max-width: 768px) {
+                    .article-layout .ProseMirror {
+                        padding: 1.5rem 1rem;
+                    }
+                    
+                    .article-layout .article-form input[type="text"] {
+                        font-size: 1.75rem;
+                    }
                 }
             `}</style>
         </Layout>
