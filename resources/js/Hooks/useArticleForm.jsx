@@ -121,7 +121,7 @@ export function useArticleForm(initialPost = null) {
         
         confirm({
             title: 'Delete Article',
-            icon: ExclamationCircleOutlined,
+            icon: <ExclamationCircleOutlined />,
             content: `Are you sure you want to delete this article "${initialPost.title}"? This action cannot be undone.`,
             okText: 'Yes, Delete',
             okType: 'danger',
@@ -129,18 +129,24 @@ export function useArticleForm(initialPost = null) {
             onOk() {
                 setDeleteLoading(true);
                 
-                // Use slug if available
+                // Use the same identifier (slug) that's used for editing
+                // Only fall back to ID if slug is unavailable
                 const url = initialPost.slug 
-                    ? `/posts/${initialPost.slug}` 
+                    ? `/posts/${initialPost.slug}`
                     : `/posts/${initialPost.id}`;
-                    
+                
+                console.log('Deleting post with URL:', url);
+                
+                // Use a hard redirect after successful deletion
                 router.delete(url, {
                     onSuccess: () => {
                         message.success('Post deleted successfully');
-                        router.get('/posts'); // Fixed: redirect to /posts, not /article
+                        // Use window.location for a hard redirect to ensure we don't stay on the deleted post page
+                        window.location.href = '/posts';
                     },
-                    onError: () => {
-                        message.error('Failed to delete post');
+                    onError: (errors) => {
+                        console.error('Delete error:', errors);
+                        message.error('Failed to delete post: ' + Object.values(errors).join(', '));
                         setDeleteLoading(false);
                     }
                 });

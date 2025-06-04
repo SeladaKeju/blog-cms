@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\EditorApplicationController;
 use App\Http\Controllers\ImageUploadController;  // Add this import
+use App\Http\Controllers\BookmarkController; // Add this import
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -79,5 +80,16 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [UserController::class, 'destroy'])->name('profile.destroy');
 });
 
+// Bookmark routes (All authenticated users)
+Route::middleware('auth')->group(function () {
+    // Tambahkan alias route untuk /bookmarks
+    Route::get('/bookmarks', [BookmarkController::class, 'index'])->name('bookmarks.index');
+    
+    Route::delete('/bookmarks/{bookmark}', [BookmarkController::class, 'destroy'])->name('bookmarks.destroy');
+    
+    // Bookmark API routes
+    Route::post('/api/bookmarks/toggle/{postId}', [BookmarkController::class, 'toggle'])->name('bookmarks.toggle');
+    Route::get('/api/bookmarks/check/{postId}', [BookmarkController::class, 'check'])->name('bookmarks.check');
+});
 
 require __DIR__.'/auth.php';

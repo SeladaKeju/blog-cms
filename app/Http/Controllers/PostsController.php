@@ -89,25 +89,6 @@ class PostsController extends Controller
     }
 
     /**
-     * Display the specified post
-     */
-    public function show(Post $post): Response
-    {
-        $user = Auth::user();
-        
-        // Admin can see all posts, editor can see own posts
-        if (!$user->hasRole('admin') && $post->author_id !== $user->id) {
-            abort(403, 'Unauthorized');
-        }
-
-        $post->load(['author', 'approver']);
-
-        return Inertia::render('Posts/Show', [
-            'post' => $post
-        ]);
-    }
-
-    /**
      * Show the form for editing the specified post
      */
     public function edit(Post $post): Response|RedirectResponse

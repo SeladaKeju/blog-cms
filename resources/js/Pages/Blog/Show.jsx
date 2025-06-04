@@ -7,14 +7,18 @@ import {
     ArrowLeftOutlined,
     UserOutlined,
     HeartOutlined,
+    HeartFilled, // Tambahkan icon ini
     ShareAltOutlined
 } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const { Title, Paragraph, Text } = Typography;
 
 export default function BlogShow({ post, relatedPosts, auth }) {
     const [readingProgress, setReadingProgress] = useState(0);
+    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
 
     // Track reading progress
     useEffect(() => {
@@ -27,6 +31,58 @@ export default function BlogShow({ post, relatedPosts, auth }) {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    // Tambahkan useEffect untuk mengecek status bookmark
+    useEffect(() => {
+        if (auth?.user) {
+            checkBookmarkStatus();
+        }
+    }, []);
+
+    // Fungsi untuk mengecek status bookmark
+    const checkBookmarkStatus = async () => {
+        try {
+            const response = await axios.get(`/api/bookmarks/check/${post.id}`);
+            setIsBookmarked(response.data.bookmarked);
+        } catch (error) {
+            console.error('Error checking bookmark status:', error);
+        }
+    };
+
+    // Fungsi untuk toggle bookmark
+    const handleBookmarkToggle = async () => {
+        if (!auth?.user) {
+            message.info('Please login to bookmark articles');
+            return;
+        }
+        
+        setIsBookmarkLoading(true);
+        try {
+            // Debug info
+            console.log('Sending bookmark toggle request for post:', post.id);
+            console.log('Current user:', auth.user);
+            console.log('Current URL:', `/api/bookmarks/toggle/${post.id}`);
+            console.log('Post ID yang dikirim:', post.id, typeof post.id);
+            
+            const response = await axios.post(`/api/bookmarks/toggle/${post.id}`);
+            
+            console.log('Response received:', response.data);
+            
+            setIsBookmarked(response.data.bookmarked);
+            message.success(response.data.message);
+        } catch (error) {
+            console.error('BOOKMARK ERROR DETAILS:');
+            console.error('Error object:', error);
+            console.error('Response status:', error.response?.status);
+            console.error('Response data:', error.response?.data);
+            console.error('Request URL:', error.config?.url);
+            console.error('Request method:', error.config?.method);
+            
+            message.error('Failed to update bookmark: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setIsBookmarkLoading(false);
+        }
+    };
 
     return (
         <BlogLayout>
@@ -132,17 +188,12 @@ export default function BlogShow({ post, relatedPosts, auth }) {
                     {/* Article Actions - Simple */}
                     <div className="flex items-center justify-center gap-6 mt-12 py-6 border-t border-gray-200">
                         <Button 
-                            type="text" 
-                            icon={<HeartOutlined />}
-                            onClick={() => {
-                                if (!auth?.user) {
-                                    message.info('Please login to bookmark articles');
-                                } else {
-                                    message.success('Bookmark feature will be implemented');
-                                }
-                            }}
+                            type={isBookmarked ? "primary" : "text"}
+                            icon={isBookmarked ? <HeartFilled /> : <HeartOutlined />}
+                            onClick={handleBookmarkToggle}
+                            loading={isBookmarkLoading}
                         >
-                            Bookmark
+                            {isBookmarked ? 'Bookmarked' : 'Bookmark'}
                         </Button>
                         <Button 
                             type="text" 

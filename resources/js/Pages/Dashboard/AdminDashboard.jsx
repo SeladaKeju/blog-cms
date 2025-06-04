@@ -12,7 +12,8 @@ import {
     TeamOutlined,
     EditOutlined,
     BellOutlined,
-    CloseCircleOutlined
+    CloseCircleOutlined,
+    PlusOutlined
 } from '@ant-design/icons';
 import ArticleCard from '@/Components/ArticleCard'; // Import ArticleCard component
 
@@ -215,40 +216,57 @@ export default function AdminDashboard({
                     </Row>
 
                     {/* Quick Actions */}
-                    <Card title="Quick Actions">
-                        <Space wrap>
-                            <Button 
-                                type="primary" 
-                                icon={<TeamOutlined />}
-                                onClick={() => navigateTo('/admin/users')}
-                            >
-                                Manage Users
-                            </Button>
-                            <Button 
-                                icon={<BellOutlined />}
-                                onClick={() => navigateTo('/admin/editor-applications')}
-                            >
-                                Review Applications
-                                {(stats?.pendingApplications || stats?.pending_applications) > 0 && (
-                                    <span className="ml-1 bg-red-500 text-white text-xs px-1 rounded-full">
-                                        {stats?.pendingApplications || stats?.pending_applications}
-                                    </span>
-                                )}
-                            </Button>
-                            <Button 
-                                icon={<FileTextOutlined />}
-                                onClick={() => navigateTo('/posts')}
-                            >
-                                View All Posts
-                            </Button>
-                            <Button 
-                                icon={<ClockCircleOutlined />}
-                                onClick={() => navigateTo('/posts/create')}
-                            >
-                                Create New Post
-                            </Button>
-                        </Space>
-                    </Card>
+                    <div>
+                        <Title level={3} className="mb-6">Quick Actions</Title>
+                        <Row gutter={[16, 16]}>
+                            <Col xs={24} sm={12} md={6}>
+                                <Button
+                                    type="primary"
+                                    block
+                                    size="large"
+                                    icon={<TeamOutlined />}
+                                    onClick={() => navigateTo('/admin/users')}
+                                >
+                                    Manage Users
+                                </Button>
+                            </Col>
+                            <Col xs={24} sm={12} md={6}>
+                                <Button
+                                    block
+                                    size="large"
+                                    icon={<BellOutlined />}
+                                    onClick={() => navigateTo('/admin/editor-applications')}
+                                >
+                                    Review Applications
+                                    {(stats?.pendingApplications || stats?.pending_applications) > 0 && (
+                                        <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                                            {stats?.pendingApplications || stats?.pending_applications}
+                                        </span>
+                                    )}
+                                </Button>
+                            </Col>
+                            <Col xs={24} sm={12} md={6}>
+                                <Button
+                                    block
+                                    size="large"
+                                    icon={<FileTextOutlined />}
+                                    onClick={() => navigateTo('/posts')}
+                                >
+                                    Manage Articles
+                                </Button>
+                            </Col>
+                            <Col xs={24} sm={12} md={6}>
+                                <Button
+                                    block
+                                    size="large"
+                                    icon={<PlusOutlined />}
+                                    onClick={() => navigateTo('/posts/create')}
+                                >
+                                    Create Article
+                                </Button>
+                            </Col>
+                        </Row>
+                    </div>
 
                     <Row gutter={[16, 16]}>
                         {/* Pending Editor Applications */}
