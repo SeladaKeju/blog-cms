@@ -91,18 +91,6 @@ export default function AuthenticatedLayout({
                     label: 'Applications',
                     onClick: () => router.get('/admin/editor-applications'),
                 },
-                {
-                    key: 'posts',
-                    icon: <FileTextOutlined />,
-                    label: 'All Posts',
-                    onClick: () => router.get('/posts'),
-                },
-                {
-                    key: 'pending-posts',
-                    icon: <FileTextOutlined />,
-                    label: 'Pending Posts',
-                    onClick: () => router.get('/admin/posts/pending'),
-                }
             );
         } else if (userRole === 'editor') {
             baseItems.push(
