@@ -6,8 +6,8 @@ import {
     ClockCircleOutlined, 
     ArrowLeftOutlined,
     UserOutlined,
-    HeartOutlined,
-    HeartFilled, // Tambahkan icon ini
+    StarOutlined,
+    StarFilled,
     ShareAltOutlined
 } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
@@ -58,26 +58,10 @@ export default function BlogShow({ post, relatedPosts, auth }) {
         
         setIsBookmarkLoading(true);
         try {
-            // Debug info
-            console.log('Sending bookmark toggle request for post:', post.id);
-            console.log('Current user:', auth.user);
-            console.log('Current URL:', `/api/bookmarks/toggle/${post.id}`);
-            console.log('Post ID yang dikirim:', post.id, typeof post.id);
-            
             const response = await axios.post(`/api/bookmarks/toggle/${post.id}`);
-            
-            console.log('Response received:', response.data);
-            
             setIsBookmarked(response.data.bookmarked);
             message.success(response.data.message);
         } catch (error) {
-            console.error('BOOKMARK ERROR DETAILS:');
-            console.error('Error object:', error);
-            console.error('Response status:', error.response?.status);
-            console.error('Response data:', error.response?.data);
-            console.error('Request URL:', error.config?.url);
-            console.error('Request method:', error.config?.method);
-            
             message.error('Failed to update bookmark: ' + (error.response?.data?.error || error.message));
         } finally {
             setIsBookmarkLoading(false);
@@ -90,175 +74,168 @@ export default function BlogShow({ post, relatedPosts, auth }) {
 
             {/* Reading Progress Bar */}
             <div 
-                className="fixed top-0 left-0 h-1 bg-blue-500 z-50 transition-all duration-300"
+                className="fixed top-0 left-0 h-1 bg-blue-600 z-50 transition-all duration-300"
                 style={{ width: `${readingProgress}%` }}
             />
 
-            {/* Article Header - Matching the yellow hero from Index */}
-            <div className="border-b border-gray-200 bg-yellow-400 text-black">
-                <div className="max-w-4xl mx-auto px-6 py-12">
-                    <div className="max-w-3xl">
-                        <div className="mb-4">
-                            <Link href="/blog" className="text-black hover:text-gray-800 transition-colors inline-flex items-center">
-                                <ArrowLeftOutlined /> <span className="ml-1">Back to Blog</span>
-                            </Link>
-                        </div>
-                        
-                        <Title 
-                            level={1} 
-                            className="text-black mb-4"
-                            style={{ 
-                                fontSize: '42px', 
-                                fontWeight: '700',
-                                lineHeight: '1.2',
-                                margin: 0,
-                                letterSpacing: '-1px'
-                            }}
-                        >
-                            {post.title}
-                        </Title>
-                        
-                        <div className="flex items-center gap-4 text-black mt-4">
-                            <div className="flex items-center gap-2">
-                                <UserOutlined />
-                                <span>{post.author || 'Admin'}</span>
-                            </div>
-                            <Text className="text-black">·</Text>
-                            <div className="flex items-center gap-2">
-                                <CalendarOutlined />
-                                <span>{post.published_date}</span>
-                            </div>
-                            <Text className="text-black">·</Text>
-                            <div className="flex items-center gap-2">
-                                <ClockCircleOutlined />
-                                <span>{post.reading_time || '5 min read'}</span>
-                            </div>
-                        </div>
+            {/* Main Content */}
+            <div className="min-h-screen bg-gray-50">
+                <div className="max-w-4xl mx-auto px-6 py-8">
+                    {/* Back Button */}
+                    <div className="mb-6">
+                        <Link href="/blog" className="text-blue-600 hover:text-blue-800 transition-colors inline-flex items-center">
+                            <ArrowLeftOutlined /> <span className="ml-1">Back to Stories</span>
+                        </Link>
                     </div>
-                </div>
-            </div>
 
-            {/* Main Content - Article Only */}
-            <div className="max-w-4xl mx-auto px-6 py-12">
-                <div className="max-w-3xl mx-auto">
-                    {/* Featured Image */}
-                    {post.thumbnail && (
-                        <div className="mb-10">
-                            <img
-                                src={post.thumbnail}
-                                alt={post.title}
-                                style={{
-                                    width: '100%',
-                                    height: 'auto',
-                                    maxHeight: '500px',
-                                    objectFit: 'cover',
-                                    borderRadius: '8px'
+                    {/* Article Container */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        {/* Featured Image */}
+                        {post.thumbnail && (
+                            <div className="w-full h-64 md:h-80 bg-gray-100">
+                                <img
+                                    src={post.thumbnail}
+                                    alt={post.title}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                        )}
+
+                        {/* Article Content */}
+                        <div className="p-8 md:p-12">
+                            {/* Article Header */}
+                            <div className="mb-8">
+                                <Title 
+                                    level={1} 
+                                    className="text-gray-900 mb-4"
+                                    style={{ 
+                                        fontSize: '36px', 
+                                        fontWeight: '700',
+                                        lineHeight: '1.2',
+                                        margin: 0
+                                    }}
+                                >
+                                    {post.title}
+                                </Title>
+                                
+                                <div className="flex items-center gap-4 text-gray-600 mb-6">
+                                    <div className="flex items-center gap-2">
+                                        <UserOutlined />
+                                        <span>{post.author || 'Admin'}</span>
+                                    </div>
+                                    <Text className="text-gray-400">·</Text>
+                                    <div className="flex items-center gap-2">
+                                        <CalendarOutlined />
+                                        <span>{post.published_date}</span>
+                                    </div>
+                                    <Text className="text-gray-400">·</Text>
+                                    <div className="flex items-center gap-2">
+                                        <ClockCircleOutlined />
+                                        <span>{post.reading_time || '5 min read'}</span>
+                                    </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex items-center gap-3 pb-6 border-b border-gray-200">
+                                    <Button 
+                                        type={isBookmarked ? "primary" : "default"}
+                                        icon={isBookmarked ? <StarFilled /> : <StarOutlined />}
+                                        onClick={handleBookmarkToggle}
+                                        loading={isBookmarkLoading}
+                                        className={isBookmarked ? "bg-blue-600 border-blue-600" : "border-gray-300"}
+                                    >
+                                        {isBookmarked ? 'Bookmarked' : 'Bookmark'}
+                                    </Button>
+                                    <Button 
+                                        type="default"
+                                        icon={<ShareAltOutlined />}
+                                        className="border-gray-300"
+                                        onClick={() => {
+                                            if (navigator.share) {
+                                                navigator.share({
+                                                    title: post.title,
+                                                    url: window.location.href
+                                                });
+                                            } else {
+                                                navigator.clipboard.writeText(window.location.href);
+                                                message.success('Link copied to clipboard!');
+                                            }
+                                        }}
+                                    >
+                                        Share
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Excerpt */}
+                            {post.excerpt && (
+                                <div className="mb-8 p-6 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg">
+                                    <Text 
+                                        style={{ 
+                                            fontSize: '18px', 
+                                            lineHeight: '1.6',
+                                            color: '#1e40af',
+                                            fontStyle: 'italic',
+                                            display: 'block'
+                                        }}
+                                    >
+                                        {post.excerpt}
+                                    </Text>
+                                </div>
+                            )}
+
+                            {/* Article Content */}
+                            <div 
+                                className="prose max-w-none blog-content"
+                                style={{ 
+                                    fontSize: '18px', 
+                                    lineHeight: '1.8',
+                                    color: '#374151'
                                 }}
+                                dangerouslySetInnerHTML={{ __html: post.content }}
                             />
                         </div>
-                    )}
-
-                    {/* Excerpt */}
-                    <div className="mb-10 p-5 border-l-4 border-gray-200 bg-gray-50">
-                        <Text 
-                            style={{ 
-                                fontSize: '18px', 
-                                lineHeight: '1.6',
-                                color: '#444',
-                                fontStyle: 'italic',
-                                display: 'block'
-                            }}
-                        >
-                            {post.excerpt}
-                        </Text>
                     </div>
 
-                    {/* Article Content */}
-                    <div 
-                        className="prose max-w-none blog-content"
-                        style={{ 
-                            fontSize: '18px', 
-                            lineHeight: '1.8',
-                            color: '#333',
-                            letterSpacing: '0.01em',
-                        }}
-                        dangerouslySetInnerHTML={{ __html: post.content }}
-                    />
-
-                    {/* Article Actions - Simple */}
-                    <div className="flex items-center justify-center gap-6 mt-12 py-6 border-t border-gray-200">
-                        <Button 
-                            type={isBookmarked ? "primary" : "text"}
-                            icon={isBookmarked ? <HeartFilled /> : <HeartOutlined />}
-                            onClick={handleBookmarkToggle}
-                            loading={isBookmarkLoading}
-                        >
-                            {isBookmarked ? 'Bookmarked' : 'Bookmark'}
-                        </Button>
-                        <Button 
-                            type="text" 
-                            icon={<ShareAltOutlined />}
-                            onClick={() => {
-                                if (navigator.share) {
-                                    navigator.share({
-                                        title: post.title,
-                                        url: window.location.href
-                                    });
-                                } else {
-                                    navigator.clipboard.writeText(window.location.href);
-                                    message.success('Link copied to clipboard!');
-                                }
-                            }}
-                        >
-                            Share
-                        </Button>
-                    </div>
-
-                    {/* Related Posts - Simplified */}
+                    {/* Related Posts */}
                     {relatedPosts.length > 0 && (
-                        <div className="mt-12 pt-6 border-t border-gray-200">
-                            <Title level={3} style={{ marginBottom: '24px', fontWeight: '700' }}>
-                                You might also like
+                        <div className="mt-12">
+                            <Title level={3} className="mb-6 text-gray-900">
+                                Related Stories
                             </Title>
-                            <div className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {relatedPosts.slice(0, 3).map((relatedPost) => (
-                                    <article key={relatedPost.id} className="group">
-                                        <Link href={`/blog/${relatedPost.slug}`}>
-                                            <div className="flex gap-6 cursor-pointer">
-                                                <div className="flex-1">
-                                                    <Title 
-                                                        level={4} 
-                                                        className="mb-2 group-hover:text-gray-600 transition-colors"
-                                                        style={{ 
-                                                            fontSize: '20px',
-                                                            lineHeight: '26px',
-                                                            fontWeight: '700',
-                                                            margin: 0,
-                                                            color: '#1a1a1a'
-                                                        }}
-                                                    >
-                                                        {relatedPost.title}
-                                                    </Title>
-                                                    <Text className="text-sm text-gray-600">
-                                                        {relatedPost.published_date}
-                                                    </Text>
-                                                </div>
-                                                {relatedPost.thumbnail && (
-                                                    <div className="flex-shrink-0">
-                                                        <img
-                                                            src={relatedPost.thumbnail}
-                                                            alt={relatedPost.title}
-                                                            className="w-24 h-24 object-cover rounded"
-                                                            style={{ aspectRatio: '1/1' }}
-                                                        />
-                                                    </div>
-                                                )}
+                                    <div 
+                                        key={relatedPost.id} 
+                                        className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
+                                    >
+                                        {relatedPost.thumbnail && (
+                                            <div className="w-full h-32 bg-gray-100">
+                                                <img
+                                                    src={relatedPost.thumbnail}
+                                                    alt={relatedPost.title}
+                                                    className="w-full h-full object-cover"
+                                                />
                                             </div>
-                                        </Link>
-                                        {relatedPosts.indexOf(relatedPost) < relatedPosts.length - 1 && (
-                                            <Divider className="my-8" />
                                         )}
-                                    </article>
+                                        <div className="p-4">
+                                            <Title 
+                                                level={5} 
+                                                className="mb-2 hover:text-blue-600 transition-colors"
+                                                style={{ 
+                                                    fontSize: '16px',
+                                                    fontWeight: '600',
+                                                    margin: 0,
+                                                    color: '#1f2937'
+                                                }}
+                                            >
+                                                {relatedPost.title}
+                                            </Title>
+                                            <Text className="text-sm text-gray-500">
+                                                {relatedPost.published_date}
+                                            </Text>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         </div>
