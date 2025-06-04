@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Models\Bookmark; // Tambahkan use statement untuk Bookmark
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -36,6 +37,15 @@ class BlogController extends Controller
 
             // Paginate results
             $posts = $query->paginate(12)->through(function ($post) {
+                $isBookmarked = false;
+                
+                // Check if post is bookmarked by current user
+                if (auth()->check()) {
+                    $isBookmarked = Bookmark::where('user_id', auth()->id())
+                        ->where('post_id', $post->id)
+                        ->exists();
+                }
+                
                 return [
                     'id' => $post->id,
                     'title' => $post->title,
@@ -46,6 +56,7 @@ class BlogController extends Controller
                     'published_at' => $post->published_at->format('Y-m-d H:i:s'),
                     'reading_time' => $this->calculateReadingTime($post->content),
                     'author' => $post->author ? $post->author->name : 'Unknown',
+                    'is_bookmarked' => $isBookmarked,
                 ];
             });
 
@@ -138,6 +149,9 @@ class BlogController extends Controller
                     'published_at' => $post->published_at->format('Y-m-d H:i:s'),
                     'reading_time' => $this->calculateReadingTime($post->content),
                     'author' => $post->author ? $post->author->name : 'Unknown',
+                    'is_bookmarked' => auth()->check() ? Bookmark::where('user_id', auth()->id())
+                        ->where('post_id', $post->id)
+                        ->exists() : false,
                 ],
                 'relatedPosts' => $relatedPosts,
                 'auth' => [

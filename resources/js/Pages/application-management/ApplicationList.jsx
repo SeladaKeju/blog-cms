@@ -25,6 +25,7 @@ import {
     CloseOutlined
 } from '@ant-design/icons';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import SearchAndFilters from '@/Components/SearchAndFilters';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -37,9 +38,9 @@ export default function ApplicationList({ applications, filters = {}, stats = {}
     const [loading, setLoading] = useState(false);
 
     // Handle search
-    const handleSearch = (value) => {
+    const handleSearch = () => {
         router.get(route('admin.editor-applications.index'), {
-            search: value,
+            search: searchTerm,
             status: statusFilter
         }, {
             preserveState: true,
@@ -52,12 +53,42 @@ export default function ApplicationList({ applications, filters = {}, stats = {}
         setStatusFilter(value);
         router.get(route('admin.editor-applications.index'), {
             search: searchTerm,
-            status: value
+            status: value,
+            page: 1
         }, {
             preserveState: true,
             preserveScroll: true
         });
     };
+
+    // Clear filters function
+    const clearFilters = () => {
+        setSearchTerm('');
+        setStatusFilter('');
+        router.get(route('admin.editor-applications.index'), {
+            search: '',
+            status: ''
+        }, {
+            preserveState: true,
+            preserveScroll: true
+        });
+    };
+
+    // Define filter configuration
+    const filterConfig = [
+        {
+            placeholder: "Filter by Status",
+            allowClear: true,
+            width: 150,
+            value: statusFilter,
+            onChange: handleStatusFilter,
+            options: [
+                { value: "pending", label: "Pending" },
+                { value: "approved", label: "Approved" },
+                { value: "rejected", label: "Rejected" }
+            ]
+        }
+    ];
 
     // Regular approve with confirmation
     const handleApprove = (application) => {
@@ -164,22 +195,12 @@ export default function ApplicationList({ applications, filters = {}, stats = {}
                 <Space size="small">
                     <Tooltip title="View Details">
                         <Button
-                            type="text"
+                            type="primary"
                             icon={<EyeOutlined />}
                             onClick={() => router.get(route('admin.editor-applications.show', record.id))}
+                            size="small"
                         />
                     </Tooltip>
-                    {record.status === 'pending' && (
-                        <Tooltip title="Approve Application">
-                            <Button
-                                type="text"
-                                icon={<CheckOutlined />}
-                                onClick={() => handleApprove(record)}
-                                loading={loading}
-                                className="text-green-600 hover:text-green-700"
-                            />
-                        </Tooltip>
-                    )}
                 </Space>
             ),
         },
@@ -196,7 +217,6 @@ export default function ApplicationList({ applications, filters = {}, stats = {}
         >
             <Head title="Editor Applications" />
 
-            {/* Updated to match admin dashboard layout structure */}
             <div className="px-6 py-6 md:px-10">
                 <div className="application-management space-y-8 md:pl-[64px]">
                     {/* Header with Stats */}
@@ -220,30 +240,20 @@ export default function ApplicationList({ applications, filters = {}, stats = {}
                         </div>
                     </div>
 
-                    {/* Filters */}
-                    <Card>
-                        <div className="flex gap-4 items-center">
-                            <Search
-                                placeholder="Search by applicant name or email..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                    {/* Replace the Card with SearchAndFilters component */}
+                    <div className="bg-white border border-gray-100 rounded-md shadow-sm">
+                        <div className="px-6 py-5">
+                            <SearchAndFilters
+                                searchTerm={searchTerm}
+                                setSearchTerm={setSearchTerm}
                                 onSearch={handleSearch}
-                                style={{ width: 300 }}
-                                enterButton={<SearchOutlined />}
+                                filters={filterConfig}
+                                onClearFilters={clearFilters}
+                                showClearButton={searchTerm || statusFilter}
+                                searchPlaceholder="Search by applicant name or email..."
                             />
-                            <Select
-                                placeholder="Filter by status"
-                                value={statusFilter}
-                                onChange={handleStatusFilter}
-                                style={{ width: 150 }}
-                                allowClear
-                            >
-                                <Option value="pending">Pending</Option>
-                                <Option value="approved">Approved</Option>
-                                <Option value="rejected">Rejected</Option>
-                            </Select>
                         </div>
-                    </Card>
+                    </div>
 
                     {/* Applications Table */}
                     <Card>

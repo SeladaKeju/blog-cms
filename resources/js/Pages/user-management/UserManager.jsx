@@ -32,6 +32,8 @@ import {
     ExclamationCircleOutlined
 } from '@ant-design/icons';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import SearchAndFilters from '@/Components/SearchAndFilters';
+import useFilters from '@/Hooks/useFilters';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -39,34 +41,70 @@ const { confirm } = Modal;
 const { Title, Text } = Typography;
 
 export default function UserManager({ users, filters = {}, stats = {} }) {
+    // Define state for all filters
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [roleFilter, setRoleFilter] = useState(filters.role || '');
+    const [verifiedFilter, setVerifiedFilter] = useState(filters.verified || '');
+    const [sortBy, setSortBy] = useState(filters.sort_by || 'created_at');
+    const [sortOrder, setSortOrder] = useState(filters.sort_order || 'desc');
+    
     const [loading, setLoading] = useState(false);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [formMode, setFormMode] = useState('create');
     const [form] = Form.useForm();
 
-    // Handle search
-    const handleSearch = (value) => {
+    // Apply filters function
+    const applyFilters = (newFilters = {}) => {
         router.get(route('admin.users.index'), {
-            search: value,
-            role: roleFilter
+            search: searchTerm,
+            role: roleFilter,
+            verified: verifiedFilter,
+            sort_by: sortBy,
+            sort_order: sortOrder,
+            page: 1,
+            ...newFilters
         }, {
             preserveState: true,
             preserveScroll: true
         });
     };
 
-    // Handle role filter
-    const handleRoleFilter = (value) => {
+    // Define handlers
+    const handleSearch = () => applyFilters({ search: searchTerm });
+    
+    const handleRoleChange = (value) => {
         setRoleFilter(value);
-        router.get(route('admin.users.index'), {
-            search: searchTerm,
-            role: value
-        }, {
-            preserveState: true,
-            preserveScroll: true
+        applyFilters({ role: value });
+    };
+    
+    const handleVerifiedChange = (value) => {
+        setVerifiedFilter(value);
+        applyFilters({ verified: value });
+    };
+    
+    const handleSortChange = (value) => {
+        setSortBy(value);
+        applyFilters({ sort_by: value });
+    };
+    
+    const handleOrderChange = (value) => {
+        setSortOrder(value);
+        applyFilters({ sort_order: value });
+    };
+    
+    const clearFilters = () => {
+        setSearchTerm('');
+        setRoleFilter('');
+        setVerifiedFilter('');
+        setSortBy('created_at');
+        setSortOrder('desc');
+        applyFilters({
+            search: '',
+            role: '',
+            verified: '',
+            sort_by: 'created_at',
+            sort_order: 'desc'
         });
     };
 
@@ -161,6 +199,56 @@ export default function UserManager({ users, filters = {}, stats = {} }) {
         }
     };
 
+    // Define filter configuration
+    const filterConfig = [
+        {
+            placeholder: "All Roles",
+            allowClear: true,
+            width: 120,
+            value: roleFilter,
+            onChange: handleRoleChange,
+            options: [
+                { value: "admin", label: "Admin" },
+                { value: "editor", label: "Editor" },
+                { value: "viewer", label: "Viewer" }
+            ]
+        },
+        {
+            placeholder: "Verification",
+            allowClear: true,
+            width: 140,
+            value: verifiedFilter,
+            onChange: handleVerifiedChange,
+            options: [
+                { value: "1", label: "Verified" },
+                { value: "0", label: "Unverified" }
+            ]
+        },
+        {
+            placeholder: "Sort By",
+            allowClear: false,
+            width: 140,
+            value: sortBy,
+            onChange: handleSortChange,
+            options: [
+                { value: "name", label: "Name" },
+                { value: "email", label: "Email" },
+                { value: "created_at", label: "Join Date" }
+            ]
+        },
+        {
+            placeholder: "Order",
+            allowClear: false,
+            width: 100,
+            value: sortOrder,
+            onChange: handleOrderChange,
+            options: [
+                { value: "desc", label: "Newest" },
+                { value: "asc", label: "Oldest" }
+            ]
+        }
+    ];
+
     // Table columns
     const columns = [
         {
@@ -215,10 +303,6 @@ export default function UserManager({ users, filters = {}, stats = {} }) {
                             UNVERIFIED
                         </Tag>
                     )}
-                    {/* Debug: Show raw value temporarily */}
-                    <div className="text-xs text-gray-400">
-                        {record.email_verified_at || 'null'}
-                    </div>
                 </div>
             ),
         },
@@ -283,7 +367,6 @@ export default function UserManager({ users, filters = {}, stats = {} }) {
         >
             <Head title="User Management" />
 
-            {/* Updated to match admin dashboard layout structure */}
             <div className="px-6 py-6 md:px-10">
                 <div className="user-management space-y-8 md:pl-[64px]">
                     {/* Header with Stats */}
@@ -319,30 +402,20 @@ export default function UserManager({ users, filters = {}, stats = {} }) {
                         </Button>
                     </div>
 
-                    {/* Filters */}
-                    <Card>
-                        <div className="flex gap-4 items-center">
-                            <Search
-                                placeholder="Search by name or email..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                    {/* Updated: SearchAndFilters component replacing the Card filter section */}
+                    <div className="bg-white border border-gray-100 rounded-md shadow-sm">
+                        <div className="px-6 py-5">
+                            <SearchAndFilters
+                                searchTerm={searchTerm}
+                                setSearchTerm={setSearchTerm}
                                 onSearch={handleSearch}
-                                style={{ width: 300 }}
-                                enterButton={<SearchOutlined />}
+                                filters={filterConfig}
+                                onClearFilters={clearFilters}
+                                showClearButton={searchTerm || roleFilter || verifiedFilter || sortBy !== 'created_at' || sortOrder !== 'desc'}
+                                searchPlaceholder="Search users by name or email..."
                             />
-                            <Select
-                                placeholder="Filter by role"
-                                value={roleFilter}
-                                onChange={handleRoleFilter}
-                                style={{ width: 150 }}
-                                allowClear
-                            >
-                                <Option value="admin">Admin</Option>
-                                <Option value="editor">Editor</Option>
-                                <Option value="viewer">Viewer</Option>
-                            </Select>
                         </div>
-                    </Card>
+                    </div>
 
                     {/* Users Table */}
                     <Card>
@@ -364,7 +437,10 @@ export default function UserManager({ users, filters = {}, stats = {} }) {
                                         page,
                                         per_page: pageSize,
                                         search: searchTerm,
-                                        role: roleFilter
+                                        role: roleFilter,
+                                        verified: verifiedFilter,
+                                        sort_by: sortBy,
+                                        sort_order: sortOrder
                                     }, {
                                         preserveState: true,
                                         preserveScroll: true
@@ -374,7 +450,7 @@ export default function UserManager({ users, filters = {}, stats = {} }) {
                         />
                     </Card>
 
-                    {/* User Form Modal */}
+                    {/* User Form Modal - no changes needed here */}
                     <Modal
                         title={formMode === 'create' ? 'Create New User' : 'Edit User'}
                         open={isFormOpen}

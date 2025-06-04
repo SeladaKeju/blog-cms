@@ -10,8 +10,10 @@ import {
     MenuOutlined,
     SettingOutlined,
     HeartOutlined,
+    HeartFilled,
     EditOutlined,
-    SearchOutlined
+    SearchOutlined,
+    DownOutlined  // Add this icon from Ant Design
 } from '@ant-design/icons';
 
 const { Header, Content, Footer } = Layout;
@@ -68,47 +70,57 @@ export default function BlogLayout({ children }) {
     const userMenuItems = [
         {
             key: 'profile',
-            icon: <SettingOutlined />,
-            label: 'Settings',
-            onClick: () => router.visit(route('profile.edit'))
+            icon: <SettingOutlined className="text-gray-600" />,
+            label: <span className="text-gray-700">Settings</span>,
+            onClick: () => router.visit(route('profile.edit')),
+            style: { padding: '10px 16px' }
         },
         {
             key: 'bookmarks',
-            icon: <HeartOutlined />,
-            label: 'Your library',
-            onClick: () => router.visit(route('profile.bookmarks'))
+            icon: <HeartFilled className="text-red-500" />,
+            label: <span className="text-gray-700">Your bookmarks</span>,
+            onClick: () => {
+                try {
+                    console.log('Navigating to bookmarks');
+                    const bookmarksRoute = route('bookmarks.index');
+                    console.log('Bookmarks route URL:', bookmarksRoute);
+                    router.visit(bookmarksRoute);
+                } catch (error) {
+                    console.error('Navigation error:', error);
+                    // Tambahkan informasi detail error
+                    message.error('Failed to navigate: ' + error.message);
+                }
+            },
+            style: { padding: '10px 16px' }
         },
-        // Show different menu item based on role
-        ...(auth?.userRole === 'viewer' ? [{
-            key: 'apply-editor',
-            icon: <EditOutlined />,
-            label: 'Apply to Write',
-            onClick: () => router.visit(route('editor-application.create'))
-        }] : []),
-        ...(auth?.userRole === 'admin' || auth?.userRole === 'editor' ? [{
-            key: 'dashboard',
-            icon: <DashboardOutlined />,
-            label: 'Dashboard',
-            onClick: () => router.visit(route('dashboard'))
-        }] : []),
         {
-            type: 'divider'
+            type: 'divider',
+            style: { margin: '4px 0' }
+        },
+      
+        // Only show for viewers
+        ...(auth.userRole === 'viewer' ? [
+        ] : []),
+        {
+            type: 'divider',
+            style: { margin: '4px 0' }
         },
         {
             key: 'logout',
-            icon: <LogoutOutlined />,
-            label: 'Sign out',
-            onClick: handleLogout
+            icon: <LogoutOutlined className="text-red-600" />,
+            label: <span className="text-gray-700">Sign out</span>,
+            onClick: handleLogout,
+            style: { padding: '10px 16px' }
         }
     ];
 
     return (
         <Layout className="min-h-screen bg-white">
-            {/* Medium-style Header */}
+            {/* Enhanced Header with better proportions */}
             <Header 
-                className="bg-white border-b border-gray-200 px-0" 
+                className="bg-white border-b border-gray-200 px-0 sticky top-0 z-50 shadow-sm" 
                 style={{ 
-                    height: '57px',
+                    height: '72px',  // Increased from 57px
                     lineHeight: 'normal',
                     display: 'flex',
                     alignItems: 'center'
@@ -119,70 +131,111 @@ export default function BlogLayout({ children }) {
                         {/* Left Side - Logo and Search */}
                         <div className="flex items-center gap-8">
                             <Link href="/blog" className="flex items-center">
-                                <span className="text-2xl font-bold text-gray-900 tracking-tight">
-                                    Blog
+                                <span className="text-3xl font-bold text-gray-900 tracking-tight">
+                                    MyBlog
                                 </span>
                             </Link>
                             
-                            {/* Search Bar */}
+                            {/* Enhanced Search Bar */}
                             <div className="hidden md:flex items-center">
                                 <Search
-                                    placeholder="Search"
+                                    placeholder="Search stories..."
                                     allowClear
                                     onSearch={handleSearch}
                                     style={{ 
-                                        width: 240,
+                                        width: 280,
                                         verticalAlign: 'middle'
                                     }}
-                                    size="middle"
+                                    size="large"
+                                    className="header-search"
                                 />
                             </div>
                         </div>
 
-                        {/* Right Side Navigation */}
+                        {/* Right Side Navigation - Enhanced */}
                         <div className="flex items-center gap-6">
-                            {/* Write Button - Single unified button */}
+                            {/* Write Button - Larger and more visible */}
                             {auth?.user && (
                                 <Button 
-                                    type="text" 
+                                    type="default" 
                                     icon={<EditOutlined />}
                                     onClick={handleWriteClick}
-                                    className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                                    className="text-gray-800 hover:text-gray-900 flex items-center gap-1 border-gray-300"
                                     style={{ 
                                         height: 'auto',
-                                        padding: '4px 8px',
-                                        verticalAlign: 'middle'
+                                        padding: '8px 16px',
+                                        verticalAlign: 'middle',
+                                        borderRadius: '20px',
+                                        fontSize: '16px'
                                     }}
                                 >
                                     Write
                                 </Button>
                             )}
 
-                            {/* User Profile or Sign In */}
+                            {/* User Profile or Sign In - Enhanced */}
                             <div className="flex items-center">
                                 {auth?.user ? (
                                     <Dropdown
                                         menu={{ items: userMenuItems }}
                                         placement="bottomRight"
                                         trigger={['click']}
+                                        dropdownRender={(menu) => (
+                                            <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden" style={{ width: '280px' }}>
+                                                {/* User info section */}
+                                                <div className="p-4 border-b border-gray-200 bg-gray-50">
+                                                    <div className="flex items-center space-x-3">
+                                                        <Avatar 
+                                                            size={48}
+                                                            icon={<UserOutlined />}
+                                                            className="bg-blue-600"
+                                                            style={{ border: '2px solid white' }}
+                                                        />
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-medium text-gray-900 truncate">
+                                                                {auth.user.name}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500 truncate">
+                                                                {auth.user.email}
+                                                            </p>
+                                                            <p className="text-xs font-medium text-blue-600 mt-1">
+                                                                {auth.userRole?.charAt(0).toUpperCase() + auth.userRole?.slice(1) || 'User'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Menu items */}
+                                                <div className="py-1">
+                                                    {menu}
+                                                </div>
+                                            </div>
+                                        )}
                                     >
-                                        <Avatar 
-                                            size={32}
-                                            icon={<UserOutlined />}
-                                            className="bg-blue-600 cursor-pointer"
-                                            style={{ border: '1px solid #e5e7eb' }}
-                                        />
+                                        <div className="flex items-center space-x-2 cursor-pointer px-3 py-1.5 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                                            <Avatar 
+                                                size={40}
+                                                icon={<UserOutlined />}
+                                                className="bg-blue-600 transition-transform duration-200 hover:scale-105"
+                                                style={{ border: '2px solid #e5e7eb' }}
+                                            />
+                                            <div className="hidden md:block">
+                                                <span className="text-sm font-medium text-gray-700">{auth.user.name?.split(' ')[0]}</span>
+                                                <DownOutlined className="h-4 w-4 text-gray-500 inline ml-1" />
+                                            </div>
+                                        </div>
                                     </Dropdown>
                                 ) : (
                                     <div className="flex items-center gap-4">
                                         <Link href={route('login')}>
                                             <Button 
                                                 type="text"
-                                                className="text-gray-600 hover:text-gray-900"
+                                                className="text-gray-600 hover:text-gray-900 text-base"
                                                 style={{ 
                                                     height: 'auto',
-                                                    padding: '4px 8px',
-                                                    verticalAlign: 'middle'
+                                                    padding: '8px 16px',
+                                                    verticalAlign: 'middle',
+                                                    fontSize: '16px'
                                                 }}
                                             >
                                                 Sign in
@@ -191,11 +244,13 @@ export default function BlogLayout({ children }) {
                                         <Link href={route('register')}>
                                             <Button 
                                                 type="primary"
-                                                className="bg-green-600 hover:bg-green-700 border-green-600 hover:border-green-700 rounded-full px-4"
+                                                className="bg-green-600 hover:bg-green-700 border-green-600 hover:border-green-700 rounded-full"
                                                 style={{ 
                                                     height: 'auto',
-                                                    padding: '6px 16px',
-                                                    verticalAlign: 'middle'
+                                                    padding: '10px 20px',
+                                                    verticalAlign: 'middle',
+                                                    fontSize: '16px',
+                                                    fontWeight: 500
                                                 }}
                                             >
                                                 Get started

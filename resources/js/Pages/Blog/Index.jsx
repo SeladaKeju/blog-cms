@@ -1,9 +1,11 @@
 import BlogLayout from '@/Layouts/BlogLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { Typography, Button, message, Divider, Avatar } from 'antd';
+import axios from 'axios';
 import { 
     ClockCircleOutlined, 
     HeartOutlined,
+    HeartFilled,
     UserOutlined
 } from '@ant-design/icons';
 
@@ -11,13 +13,33 @@ const { Title, Paragraph, Text } = Typography;
 
 export default function BlogIndex({ posts, filters, auth }) {
     
-    const handleBookmarkClick = (e) => {
+    const handleBookmarkClick = async (e, postId) => {
         e.stopPropagation();
         if (!auth?.user) {
             message.info('Please sign in to bookmark articles');
             return;
         }
-        message.success('Bookmark feature will be implemented');
+        
+        try {
+            const response = await axios.post(`/api/bookmarks/toggle/${postId}`);
+            message.success(response.data.message);
+            
+            // Update bookmark status in post list (no full page reload)
+            const updatedPosts = {...posts};
+            updatedPosts.data = posts.data.map(post => {
+                if (post.id === postId) {
+                    return {...post, is_bookmarked: !post.is_bookmarked};
+                }
+                return post;
+            });
+            // Jika kita memiliki state untuk posts, kita bisa update di sini
+            // setPosts(updatedPosts);
+            
+            // Alternatif: force refresh halaman
+            // window.location.reload();
+        } catch (error) {
+            message.error('Failed to update bookmark');
+        }
     };
 
     return (
@@ -139,9 +161,9 @@ export default function BlogIndex({ posts, filters, auth }) {
                                                 <Button 
                                                     type="text" 
                                                     size="small"
-                                                    icon={<HeartOutlined />}
-                                                    onClick={handleBookmarkClick}
-                                                    className="text-gray-400 hover:text-gray-600"
+                                                    icon={post.is_bookmarked ? <HeartFilled className="text-red-500" /> : <HeartOutlined />}
+                                                    onClick={(e) => handleBookmarkClick(e, post.id)}
+                                                    className={post.is_bookmarked ? "text-red-500" : "text-gray-400 hover:text-gray-600"}
                                                 />
                                             </div>
                                         </div>

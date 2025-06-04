@@ -232,14 +232,34 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->orderBy('created_at', 'desc')
-            ->paginate(15)
+        // Filter by verification status
+        if ($request->filled('verified')) {
+            if ($request->verified == '1') {
+                $query->whereNotNull('email_verified_at');
+            } else {
+                $query->whereNull('email_verified_at');
+            }
+        }
+
+        // Apply sorting
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        
+        // Validate sort field to prevent SQL injection
+        $allowedSortFields = ['name', 'email', 'created_at'];
+        if (!in_array($sortBy, $allowedSortFields)) {
+            $sortBy = 'created_at';
+        }
+        
+        $query->orderBy($sortBy, $sortOrder);
+
+        $users = $query->paginate($request->get('per_page', 15))
             ->through(function ($user) {
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'email_verified_at' => $user->email_verified_at, // ADD THIS LINE
+                    'email_verified_at' => $user->email_verified_at,
                     'created_at' => $user->created_at,
                     'roles' => $user->roles,
                 ];
@@ -259,6 +279,9 @@ class UserController extends Controller
             'filters' => [
                 'search' => $request->search,
                 'role' => $request->role,
+                'verified' => $request->verified,
+                'sort_by' => $sortBy,
+                'sort_order' => $sortOrder,
             ],
             'stats' => $stats
         ]);
