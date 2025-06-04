@@ -221,24 +221,6 @@ class PostsController extends Controller
         return redirect()->back()->with('success', 'Post rejected successfully!');
     }
 
-    /**
-     * Get pending posts for admin review
-     */
-    public function pending(): Response
-    {
-        if (!Auth::user()->can('approve-posts')) {
-            abort(403, 'Unauthorized');
-        }
-
-        $posts = Post::with(['author'])
-            ->pendingReview()
-            ->latest()
-            ->paginate(15);
-
-        return Inertia::render('Admin/Posts/Pending', [
-            'posts' => $posts
-        ]);
-    }
 
     /**
      * Extract management filters from request

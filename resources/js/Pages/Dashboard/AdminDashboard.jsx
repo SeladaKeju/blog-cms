@@ -168,7 +168,6 @@ export default function AdminDashboard({
         >
             <Head title="Admin Dashboard" />
             
-            {/* Updated layout structure to match EditorDashboard */}
             <div className="px-6 py-6 md:px-10">
                 <div className="admin-dashboard space-y-8 md:pl-16">
                     {/* Stats Cards */}
@@ -186,7 +185,7 @@ export default function AdminDashboard({
                         <Col xs={24} sm={12} lg={6}>
                             <Card>
                                 <Statistic
-                                    title="Total Posts"
+                                    title="Published Posts" 
                                     value={stats?.totalPosts || stats?.total_posts || 0}
                                     prefix={<FileTextOutlined />}
                                     valueStyle={{ color: '#52c41a' }}
@@ -215,11 +214,11 @@ export default function AdminDashboard({
                         </Col>
                     </Row>
 
-                    {/* Quick Actions */}
+                    {/* Quick Actions - Remove Create Article and update Manage Articles */}
                     <div>
                         <Title level={3} className="mb-6">Quick Actions</Title>
                         <Row gutter={[16, 16]}>
-                            <Col xs={24} sm={12} md={6}>
+                            <Col xs={24} sm={12} md={8}>
                                 <Button
                                     type="primary"
                                     block
@@ -230,7 +229,7 @@ export default function AdminDashboard({
                                     Manage Users
                                 </Button>
                             </Col>
-                            <Col xs={24} sm={12} md={6}>
+                            <Col xs={24} sm={12} md={8}>
                                 <Button
                                     block
                                     size="large"
@@ -245,24 +244,14 @@ export default function AdminDashboard({
                                     )}
                                 </Button>
                             </Col>
-                            <Col xs={24} sm={12} md={6}>
+                            <Col xs={24} sm={12} md={8}>
                                 <Button
                                     block
                                     size="large"
                                     icon={<FileTextOutlined />}
-                                    onClick={() => navigateTo('/posts')}
+                                    onClick={() => navigateTo('/admin/posts')}
                                 >
-                                    Manage Articles
-                                </Button>
-                            </Col>
-                            <Col xs={24} sm={12} md={6}>
-                                <Button
-                                    block
-                                    size="large"
-                                    icon={<PlusOutlined />}
-                                    onClick={() => navigateTo('/posts/create')}
-                                >
-                                    Create Article
+                                    Manage Published Articles
                                 </Button>
                             </Col>
                         </Row>
@@ -348,18 +337,9 @@ export default function AdminDashboard({
                         </Col>
                     </Row>
 
-                    {/* Recent Posts - with author name opposite to title */}
+                    {/* Recent Published Posts - Remove View All Link */}
                     <Card 
-                        title="Recent Posts"
-                        extra={
-                            <Button 
-                                type="link" 
-                                size="small"
-                                onClick={() => navigateTo('/posts')}
-                            >
-                                View All
-                            </Button>
-                        }
+                        title="Recently Published Posts"
                         bodyStyle={{ padding: '16px' }}
                     >
                         {recentPosts && recentPosts.length > 0 ? (
@@ -370,7 +350,6 @@ export default function AdminDashboard({
                                             article={{
                                                 ...post,
                                                 excerpt: post.excerpt || 'No excerpt available for this post.',
-                                                // Add custom render prop for title section
                                                 customTitle: (
                                                     <div className="flex items-center justify-between w-full">
                                                         <Title 
@@ -380,16 +359,21 @@ export default function AdminDashboard({
                                                         >
                                                             {post.title}
                                                         </Title>
-                                                        <Text className="text-sm text-gray-500">
-                                                            By <span className="font-medium text-gray-700">
-                                                                {post.author ? post.author.name : 'Unknown'}
-                                                            </span>
-                                                        </Text>
+                                                        <div className="flex flex-col items-end">
+                                                            <Text className="text-sm text-gray-500">
+                                                                By <span className="font-medium text-gray-700">
+                                                                    {post.author ? post.author.name : 'Unknown'}
+                                                                </span>
+                                                            </Text>
+                                                            <Text className="text-xs text-gray-400">
+                                                                Published: {post.published_date}
+                                                            </Text>
+                                                        </div>
                                                     </div>
                                                 )
                                             }}
                                             onClick={() => handleArticleClick(post)}
-                                            showStatus={true}
+                                            showStatus={false} // Hide status since all are published
                                             thumbnailSize="medium"
                                             titleSize={{ level: 4, fontSize: '20px' }}
                                             excerptRows={3}
@@ -401,7 +385,8 @@ export default function AdminDashboard({
                         ) : (
                             <div className="text-center py-8 text-gray-500">
                                 <FileTextOutlined className="text-2xl mb-2" />
-                                <div>No recent posts</div>
+                                <div>No published posts yet</div>
+                                <Text className="text-sm">Published posts will appear here</Text>
                             </div>
                         )}
                     </Card>

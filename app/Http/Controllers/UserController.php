@@ -78,10 +78,57 @@ class UserController extends Controller
             return Inertia::render('Dashboard/AdminDashboard', [
                 'stats' => [
                     'total_users' => \App\Models\User::count(),
-                    'total_posts' => \App\Models\Post::count(),
+                    'total_posts' => \App\Models\Post::where('status', 'published')->count(), // Only published posts
                     'pending_applications' => \App\Models\EditorApplication::where('status', 'pending')->count(),
+                    'active_editors' => \App\Models\User::role('editor')->count(),
                 ],
-                'recentPosts' => \App\Models\Post::with('author')->latest()->take(5)->get(),
+                'recentUsers' => \App\Models\User::latest()->take(5)->get()->map(function ($user) {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'created_at' => $user->created_at->format('Y-m-d H:i:s'),
+                    ];
+                }),
+                // Filter only published posts
+                'recentPosts' => \App\Models\Post::with('author')
+                    ->where('status', 'published')
+                    ->whereNotNull('published_at')
+                    ->latest('published_at')
+                    ->take(5)
+                    ->get()
+                    ->map(function ($post) {
+                        return [
+                            'id' => $post->id,
+                            'title' => $post->title,
+                            'slug' => $post->slug,
+                            'excerpt' => $post->excerpt,
+                            'thumbnail' => $post->thumbnail ? asset('storage/' . $post->thumbnail) : null,
+                            'status' => $post->status,
+                            'published_date' => $post->published_at->format('F j, Y'),
+                            'author' => $post->author ? [
+                                'id' => $post->author->id,
+                                'name' => $post->author->name,
+                            ] : null,
+                        ];
+                    }),
+                'recentApplications' => \App\Models\EditorApplication::with('user')
+                    ->where('status', 'pending')
+                    ->latest()
+                    ->take(5)
+                    ->get()
+                    ->map(function ($app) {
+                        return [
+                            'id' => $app->id,
+                            'user' => [
+                                'id' => $app->user->id,
+                                'name' => $app->user->name,
+                                'email' => $app->user->email,
+                            ],
+                            'status' => $app->status,
+                            'created_at' => $app->created_at->format('Y-m-d H:i:s'),
+                        ];
+                    }),
                 'permissions' => ['manage-users', 'manage-posts', 'manage-applications']
             ]);
         } elseif ($user->hasRole('editor')) {

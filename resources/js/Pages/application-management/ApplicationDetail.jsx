@@ -1,15 +1,27 @@
-import React, { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import { Card, Button, Typography, Space, Tag, Avatar, Modal, Input, message, Descriptions, Spin } from 'antd';
-import { 
-    UserOutlined, 
-    CheckCircleOutlined, 
+import React, { useState } from "react";
+import { Head, router } from "@inertiajs/react";
+import {
+    Card,
+    Button,
+    Typography,
+    Space,
+    Tag,
+    Avatar,
+    Modal,
+    Input,
+    message,
+    Descriptions,
+    Spin,
+} from "antd";
+import {
+    UserOutlined,
+    CheckCircleOutlined,
     CloseCircleOutlined,
     ArrowLeftOutlined,
     LinkOutlined,
-    LoadingOutlined
-} from '@ant-design/icons';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+    LoadingOutlined,
+} from "@ant-design/icons";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 const { Title, Paragraph, Text } = Typography;
 const { TextArea } = Input;
@@ -17,28 +29,32 @@ const { confirm } = Modal;
 
 export default function ApplicationDetail({ application }) {
     const [rejectModalVisible, setRejectModalVisible] = useState(false);
-    const [rejectionReason, setRejectionReason] = useState('');
+    const [rejectionReason, setRejectionReason] = useState("");
     const [processing, setProcessing] = useState(false);
 
     // Simple approve handler
     const handleApprove = () => {
         confirm({
-            title: 'Approve Application',
+            title: "Approve Application",
             content: `Approve ${application.user.name}'s editor application?`,
-            okText: 'Approve',
-            cancelText: 'Cancel',
+            okText: "Approve",
+            cancelText: "Cancel",
             onOk() {
                 setProcessing(true);
-                
-                router.post(route('admin.editor-applications.approve', application.id), {}, {
-                    onFinish: () => setProcessing(false),
-                    onSuccess: () => {
-                        message.success('Application approved!');
-                    },
-                    onError: () => {
-                        message.error('Failed to approve application');
+
+                router.post(
+                    route("admin.editor-applications.approve", application.id),
+                    {},
+                    {
+                        onFinish: () => setProcessing(false),
+                        onSuccess: () => {
+                            message.success("Application approved!");
+                        },
+                        onError: () => {
+                            message.error("Failed to approve application");
+                        },
                     }
-                });
+                );
             },
         });
     };
@@ -46,61 +62,87 @@ export default function ApplicationDetail({ application }) {
     // Simple reject handler
     const handleReject = () => {
         setProcessing(true);
-        
-        router.post(route('admin.editor-applications.reject', application.id), {
-            rejection_reason: rejectionReason || 'No reason provided'
-        }, {
-            onFinish: () => {
-                setProcessing(false);
-                setRejectModalVisible(false);
-                setRejectionReason('');
+
+        router.post(
+            route("admin.editor-applications.reject", application.id),
+            {
+                rejection_reason: rejectionReason || "No reason provided",
             },
-            onSuccess: () => {
-                message.success('Application rejected!');
-            },
-            onError: () => {
-                message.error('Failed to reject application');
+            {
+                onFinish: () => {
+                    setProcessing(false);
+                    setRejectModalVisible(false);
+                    setRejectionReason("");
+                },
+                onSuccess: () => {
+                    message.success("Application rejected!");
+                },
+                onError: () => {
+                    message.error("Failed to reject application");
+                },
             }
-        });
+        );
     };
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'pending': return 'orange';
-            case 'approved': return 'green';
-            case 'rejected': return 'red';
-            default: return 'default';
+            case "pending":
+                return "orange";
+            case "approved":
+                return "green";
+            case "rejected":
+                return "red";
+            default:
+                return "default";
         }
     };
 
     return (
         <AuthenticatedLayout
-            title="Application Review"
-            subtitle="Review editor application details"
+            title={
+                <div className="flex flex-col space-y-1 py-1">
+                    <h1 className="text-xl font-semibold text-gray-900 m-0">
+                        Application Review
+                    </h1>
+                    <p className="text-sm text-gray-500 m-0">
+                        Review editor application details
+                    </p>
+                </div>
+            }
         >
             <Head title="Application Detail" />
 
+            {/* Back Button - Remove border and text, keep only icon */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <Button
+                    icon={<ArrowLeftOutlined />}
+                    onClick={() =>
+                        router.get(route("admin.editor-applications.index"))
+                    }
+                    className="mb-4 border-0 shadow-none"
+                    type="text"
+                />
+            </div>
+
             <div className="max-w-4xl mx-auto p-6">
-                {/* Header */}
+                {/* Header - Remove duplicate back button */}
                 <div className="mb-6">
-                    <Button 
-                        icon={<ArrowLeftOutlined />}
-                        onClick={() => router.get(route('admin.editor-applications.index'))}
-                        className="mb-4"
-                    >
-                        Back to Applications
-                    </Button>
-                    
                     <div className="flex justify-between items-start">
                         <div>
                             <Title level={2} className="mb-2">
                                 Editor Application Review
                             </Title>
                             <Text type="secondary">
-                                Submitted on {new Date(application.created_at).toLocaleDateString()}
+                                Submitted on{" "}
+                                {new Date(
+                                    application.created_at
+                                ).toLocaleDateString()}
                             </Text>
                         </div>
-                        <Tag color={getStatusColor(application.status)} className="text-sm py-1 px-3">
+                        <Tag
+                            color={getStatusColor(application.status)}
+                            className="text-sm py-1 px-3"
+                        >
                             {application.status.toUpperCase()}
                         </Tag>
                     </div>
@@ -115,14 +157,18 @@ export default function ApplicationDetail({ application }) {
                                 <Descriptions.Item label="Name">
                                     <div className="flex items-center gap-2">
                                         <Avatar icon={<UserOutlined />} />
-                                        <span className="font-medium">{application.user.name}</span>
+                                        <span className="font-medium">
+                                            {application.user.name}
+                                        </span>
                                     </div>
                                 </Descriptions.Item>
                                 <Descriptions.Item label="Email">
                                     {application.user.email}
                                 </Descriptions.Item>
                                 <Descriptions.Item label="Member Since">
-                                    {new Date(application.user.created_at).toLocaleDateString()}
+                                    {new Date(
+                                        application.user.created_at
+                                    ).toLocaleDateString()}
                                 </Descriptions.Item>
                                 <Descriptions.Item label="Current Role">
                                     <Tag color="blue">Viewer</Tag>
@@ -134,9 +180,16 @@ export default function ApplicationDetail({ application }) {
                         <Card title="Application Details">
                             <div className="space-y-4">
                                 <div>
-                                    <Title level={5} className="mb-2">Motivation</Title>
+                                    <Title level={5} className="mb-2">
+                                        Motivation
+                                    </Title>
                                     <div className="bg-gray-50 p-4 rounded-lg">
-                                        <Paragraph style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}>
+                                        <Paragraph
+                                            style={{
+                                                marginBottom: 0,
+                                                whiteSpace: "pre-wrap",
+                                            }}
+                                        >
                                             {application.motivation}
                                         </Paragraph>
                                     </div>
@@ -144,9 +197,16 @@ export default function ApplicationDetail({ application }) {
 
                                 {application.experience && (
                                     <div>
-                                        <Title level={5} className="mb-2">Experience</Title>
+                                        <Title level={5} className="mb-2">
+                                            Experience
+                                        </Title>
                                         <div className="bg-gray-50 p-4 rounded-lg">
-                                            <Paragraph style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}>
+                                            <Paragraph
+                                                style={{
+                                                    marginBottom: 0,
+                                                    whiteSpace: "pre-wrap",
+                                                }}
+                                            >
                                                 {application.experience}
                                             </Paragraph>
                                         </div>
@@ -155,11 +215,13 @@ export default function ApplicationDetail({ application }) {
 
                                 {application.portfolio_url && (
                                     <div>
-                                        <Title level={5} className="mb-2">Portfolio</Title>
+                                        <Title level={5} className="mb-2">
+                                            Portfolio
+                                        </Title>
                                         <div className="bg-gray-50 p-4 rounded-lg">
-                                            <a 
-                                                href={application.portfolio_url} 
-                                                target="_blank" 
+                                            <a
+                                                href={application.portfolio_url}
+                                                target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="text-blue-600 hover:text-blue-800 flex items-center gap-2"
                                             >
@@ -176,9 +238,12 @@ export default function ApplicationDetail({ application }) {
                     {/* Sidebar Actions */}
                     <div className="space-y-6">
                         {/* Action Buttons */}
-                        {application.status === 'pending' && (
+                        {application.status === "pending" && (
                             <Card title="Actions" loading={processing}>
-                                <Space direction="vertical" style={{ width: '100%' }}>
+                                <Space
+                                    direction="vertical"
+                                    style={{ width: "100%" }}
+                                >
                                     <Button
                                         type="primary"
                                         icon={<CheckCircleOutlined />}
@@ -192,7 +257,9 @@ export default function ApplicationDetail({ application }) {
                                     <Button
                                         danger
                                         icon={<CloseCircleOutlined />}
-                                        onClick={() => setRejectModalVisible(true)}
+                                        onClick={() =>
+                                            setRejectModalVisible(true)
+                                        }
                                         disabled={processing}
                                         block
                                         size="large"
@@ -208,17 +275,30 @@ export default function ApplicationDetail({ application }) {
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
                                     <span>Application ID:</span>
-                                    <span className="font-mono">{application.id}</span>
+                                    <span className="font-mono">
+                                        {application.id}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Status:</span>
-                                    <Tag color={getStatusColor(application.status)} size="small">
+                                    <Tag
+                                        color={getStatusColor(
+                                            application.status
+                                        )}
+                                        size="small"
+                                    >
                                         {application.status}
                                     </Tag>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Word Count:</span>
-                                    <span>{application.motivation.split(' ').length} words</span>
+                                    <span>
+                                        {
+                                            application.motivation.split(" ")
+                                                .length
+                                        }{" "}
+                                        words
+                                    </span>
                                 </div>
                             </div>
                         </Card>
@@ -229,24 +309,39 @@ export default function ApplicationDetail({ application }) {
                                 <div className="flex items-start gap-3">
                                     <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                                     <div>
-                                        <div className="font-medium">Application Submitted</div>
+                                        <div className="font-medium">
+                                            Application Submitted
+                                        </div>
                                         <div className="text-sm text-gray-500">
-                                            {new Date(application.created_at).toLocaleString()}
+                                            {new Date(
+                                                application.created_at
+                                            ).toLocaleString()}
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 {application.reviewed_at && (
                                     <div className="flex items-start gap-3">
-                                        <div className={`w-2 h-2 rounded-full mt-2 ${
-                                            application.status === 'approved' ? 'bg-green-500' : 'bg-red-500'
-                                        }`}></div>
+                                        <div
+                                            className={`w-2 h-2 rounded-full mt-2 ${
+                                                application.status ===
+                                                "approved"
+                                                    ? "bg-green-500"
+                                                    : "bg-red-500"
+                                            }`}
+                                        ></div>
                                         <div>
                                             <div className="font-medium">
-                                                Application {application.status === 'approved' ? 'Approved' : 'Rejected'}
+                                                Application{" "}
+                                                {application.status ===
+                                                "approved"
+                                                    ? "Approved"
+                                                    : "Rejected"}
                                             </div>
                                             <div className="text-sm text-gray-500">
-                                                {new Date(application.reviewed_at).toLocaleString()}
+                                                {new Date(
+                                                    application.reviewed_at
+                                                ).toLocaleString()}
                                             </div>
                                         </div>
                                     </div>

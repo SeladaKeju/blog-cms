@@ -82,9 +82,8 @@ Route::middleware('auth')->group(function () {
 
 // Bookmark routes (All authenticated users)
 Route::middleware('auth')->group(function () {
-    // Tambahkan alias route untuk /bookmarks
-    Route::get('/bookmarks', [BookmarkController::class, 'index'])->name('bookmarks.index');
-    
+    // Bookmark routes
+    Route::get('/blog/bookmarks', [BookmarkController::class, 'index'])->name('blog.bookmarks');
     Route::delete('/bookmarks/{bookmark}', [BookmarkController::class, 'destroy'])->name('bookmarks.destroy');
     
     // Bookmark API routes
