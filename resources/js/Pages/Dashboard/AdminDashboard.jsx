@@ -13,7 +13,8 @@ import {
     EditOutlined,
     BellOutlined,
     CloseCircleOutlined,
-    PlusOutlined
+    PlusOutlined,
+    BookOutlined // Add this import
 } from '@ant-design/icons';
 import ArticleCard from '@/Components/ArticleCard'; // Import ArticleCard component
 
@@ -214,11 +215,11 @@ export default function AdminDashboard({
                         </Col>
                     </Row>
 
-                    {/* Quick Actions - Remove Create Article and update Manage Articles */}
+                    {/* Quick Actions - Add View Blog like EditorDashboard */}
                     <div>
                         <Title level={3} className="mb-6">Quick Actions</Title>
                         <Row gutter={[16, 16]}>
-                            <Col xs={24} sm={12} md={8}>
+                            <Col xs={24} sm={12} md={6}>
                                 <Button
                                     type="primary"
                                     block
@@ -229,7 +230,7 @@ export default function AdminDashboard({
                                     Manage Users
                                 </Button>
                             </Col>
-                            <Col xs={24} sm={12} md={8}>
+                            <Col xs={24} sm={12} md={6}>
                                 <Button
                                     block
                                     size="large"
@@ -244,14 +245,25 @@ export default function AdminDashboard({
                                     )}
                                 </Button>
                             </Col>
-                            <Col xs={24} sm={12} md={8}>
+                            <Col xs={24} sm={12} md={6}>
                                 <Button
                                     block
                                     size="large"
                                     icon={<FileTextOutlined />}
                                     onClick={() => navigateTo('/admin/posts')}
                                 >
-                                    Manage Published Articles
+                                    Manage Articles
+                                </Button>
+                            </Col>
+                            <Col xs={24} sm={12} md={6}>
+                                <Button
+                                    type="default"
+                                    block
+                                    size="large"
+                                    icon={<BookOutlined />}
+                                    onClick={() => window.open('/blog', '_blank')}
+                                >
+                                    View Blog
                                 </Button>
                             </Col>
                         </Row>

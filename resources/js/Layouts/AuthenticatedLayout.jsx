@@ -142,15 +142,11 @@ export default function AuthenticatedLayout({
                     className="custom-sidebar"
                 >
                     {/* Regular sidebar content */}
-                    <div className="p-4 border-b border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <Avatar size="large" icon={<UserOutlined />} />
-                            {!collapsed && (
-                                <div>
-                                    <div className="font-medium text-gray-900">{user.name}</div>
-                                    <div className="text-sm text-gray-500 capitalize">{userRole}</div>
-                                </div>
-                            )}
+                    <div className="p-6 border-b border-gray-200">
+                        <div className="flex justify-center">
+                            <div className="text-center">
+                                <div className="font-bold text-gray-900 text-3xl tracking-tight">Notionary</div>
+                            </div>
                         </div>
                     </div>
                     
