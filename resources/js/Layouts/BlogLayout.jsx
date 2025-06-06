@@ -67,19 +67,19 @@ export default function BlogLayout({ children }) {
         message.info('You need to be a viewer to apply as editor');
     };
 
-    // User dropdown menu items
+    // User dropdown menu items - Add black icons
     const userMenuItems = [
         {
             key: 'profile',
-            icon: <SettingOutlined />,
-            label: <span className="text-gray-700">Settings</span>,
-            onClick: () => router.visit(route('profile.edit')),
-            style: { padding: '10px 16px' }
+            icon: <SettingOutlined style={{ color: '#000000', fontSize: '18px' }} />, // Black icon
+            label: <span className="text-gray-700 text-lg font-medium">Settings</span>, // Increased to text-lg
+            onClick: () => router.visit(route('profile.edit') + '?from=blog'),
+            style: { padding: '16px 24px', fontSize: '18px', minHeight: '56px' } // Larger padding and font
         },
         {
             key: 'bookmarks',
-            icon: <StarOutlined />,
-            label: <span className="text-gray-700">Your bookmarks</span>,
+            icon: <StarOutlined style={{ color: '#000000', fontSize: '18px' }} />, // Black icon
+            label: <span className="text-gray-700 text-lg font-medium">Bookmarks</span>, // Increased to text-lg
             onClick: () => {
                 try {
                     console.log('Navigating to bookmarks');
@@ -91,18 +91,18 @@ export default function BlogLayout({ children }) {
                     message.error('Failed to navigate: ' + error.message);
                 }
             },
-            style: { padding: '10px 16px' }
+            style: { padding: '16px 24px', fontSize: '18px', minHeight: '56px' } // Larger padding and font
         },
         {
             type: 'divider',
-            style: { margin: '4px 0' }
+            style: { margin: '12px 0' } // Increased margin
         },
         {
             key: 'logout',
-            icon: <LogoutOutlined />,
-            label: <span className="text-gray-700">Sign out</span>,
+            icon: <LogoutOutlined style={{ color: '#000000', fontSize: '18px' }} />, // Black icon
+            label: <span className="text-gray-700 text-lg font-medium">Sign out</span>, // Increased to text-lg
             onClick: handleLogout,
-            style: { padding: '10px 16px' }
+            style: { padding: '16px 24px', fontSize: '18px', minHeight: '56px' } // Larger padding and font
         }
     ];
 
@@ -172,34 +172,16 @@ export default function BlogLayout({ children }) {
                                     placement="bottomRight"
                                     trigger={['click']}
                                     dropdownRender={(menu) => (
-                                        <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden" style={{ width: '280px' }}>
-                                            {/* User info section */}
-                                            <div className="p-4 border-b border-gray-200 bg-gray-50">
-                                                <div className="flex items-center space-x-3">
-                                                    <Avatar 
-                                                        size={48}
-                                                        icon={<UserOutlined />}
-                                                        className="bg-blue-600"
-                                                        style={{ border: '2px solid white' }}
-                                                    />
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-medium text-gray-900 truncate">
-                                                            {auth.user.name}
-                                                        </p>
-                                                        <p className="text-xs text-gray-500 truncate">
-                                                            {auth.user.email}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                        <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden" style={{ width: '320px' }}>
                                             
-                                            {/* Menu items */}
-                                            <div className="py-1">
+                                            {/* Menu items with larger fonts */}
+                                            <div className="py-3">
                                                 {menu}
                                             </div>
                                         </div>
                                     )}
                                 >
+                                    {/* Keep avatar in header trigger */}
                                     <div className="flex items-center space-x-2 cursor-pointer px-3 py-1.5 rounded-full hover:bg-gray-100 transition-colors duration-200">
                                         <Avatar 
                                             size={42}
@@ -207,10 +189,7 @@ export default function BlogLayout({ children }) {
                                             className="bg-blue-600 transition-transform duration-200 hover:scale-105"
                                             style={{ border: '2px solid #e5e7eb' }}
                                         />
-                                        <div className="hidden lg:block">
-                                            <span className="text-sm font-medium text-gray-700">{auth.user.name?.split(' ')[0]}</span>
-                                            <DownOutlined className="h-4 w-4 text-gray-500 inline ml-1" />
-                                        </div>
+                                        {/* Remove user name display */}
                                     </div>
                                 </Dropdown>
                             ) : (
